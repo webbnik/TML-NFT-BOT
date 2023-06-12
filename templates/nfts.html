@@ -1,0 +1,58 @@
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tomorrowland NFTs</title>
+<link rel="icon" type="image/png" href="favicon.ico">
+
+<style>
+    .floorprice {
+        font-size: 16px;
+        line-height: 1;
+    }
+
+    .date {
+        font-size: 9px;
+        line-height: 0.9;
+        display: inline;
+        color: gray;
+    }
+
+    .card-link {
+        text-decoration: none;
+    }
+
+    .nft-image {
+        background-repeat: no-repeat;
+        background-position: right;
+        background-size: 140px;
+    }
+</style>
+
+
+{% for nft in nfts | sort(attribute='order')%}
+<div class="col-lg-4 col-md-12 col-sm-12 card-container {{ nft.symbol }}">
+    <a href="https://magiceden.io/marketplace/{{ nft.symbol }}" class="card-link">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">#{{nft.order}} - {{nft.name}}</h5>
+                <div class="card-body nft-image" style="background-image: url('{{nft.image}}');">
+                    <p class="card-text">Floor: <b>{{ nft.floorPrice / 1000000000 }} SOL</b> ({{ '%.0f' | format(nft.floorPrice / 1000000000 * sol.price |round(0))}}$)</p>
+                    <p class="card-text">Listed: {{ nft.listedCount }} pcs</p>
+                    <p class="card-text">Average 24h: {{ '%.2f' | format(nft.avgPrice24hr / 1000000000) }} SOL</p>
+                </div>
+            </div>
+        </div>
+    </a>
+</div>
+{% endfor %}
+
+<div class="floorprice">
+    <p>Floor total: <b>{{ '%.2f' | format(total_floor_price / 1000000000) }} SOL</b> ({{ '%.2f' | format(total_floor_price / 1000000000 * sol.price | round(1))}}$)
+        <span class="date">{{nftfetched.fetched.strftime('%d-%m-%y %H:%M:%S')}} UTC</span>
+    </p>
+    <p>SOL in USDT: 1 SOL = <b>{{sol.price |round(2)}}$</b>
+        <span class="date">{{sol.fetched.strftime('%d-%m-%y %H:%M:%S')}} UTC</span>
+    </p>
+    <!-- <p>Total collection worth in USDT: <b>{{ total_floor_price / 1000000000 * sol.price | round(0)}}$</b></p> -->
+</div>
