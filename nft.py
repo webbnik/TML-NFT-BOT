@@ -118,8 +118,8 @@ def fetch_magiceden():
                     "avatar_url": "https://i.imgur.com/4M34hi2.png",
                     "embeds": [
                         {
-                            "title": "Floor Price Update",
-                            "description": f"{symbol_info['name']} has {upordown} from {data['floorPrice'] / 1000000000} SOL to {data['floorPrice'] / 1000000000} SOL",
+                            "title": f"{symbol_info['name']}",
+                            "description": f"Has {upordown} from {data['floorPrice'] / 1000000000} SOL to {data['floorPrice'] / 1000000000} SOL",
                             "color": symbol_info["color"],
                             "fields": [
                                 {

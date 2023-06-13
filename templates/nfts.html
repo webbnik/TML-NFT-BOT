@@ -57,9 +57,10 @@
             color: black;
         }
 
-        .link {
+        .contact {
             text-decoration: none;
             color: black;
+            text-align: center;
         }
 
         .nft-image {
@@ -130,9 +131,6 @@
                     <a href="#" id="toggle-link" onclick="toggleNFTCards(event)">Collectibles</a>
 
                 </p>
-                Problems? Feedback?:
-                <a href="https://discord.gg/WGYaCcApvQ" class="link" target="_blank"><i class="fa-brands fa-discord" alt="Feedback and NFT-bot"></i></a>
-                <a href="https://github.com/webbnik/TML-NFT-BOT" class="link" target="_blank"><i class="fa-brands fa-github"></i></a>
             </div>
         </div>
     </div>
@@ -160,6 +158,12 @@
         </div>
         {% endif %}
         {% endfor %}
+    </div>
+
+    <div class="contact">
+        <a href="https://discord.gg/WGYaCcApvQ" class="contact" target="_blank">
+            Feedback or contact? Join our Discord:
+            <i class="fa-brands fa-discord" alt="Feedback and NFT-bot"></i></a>
     </div>
 
     <script>
