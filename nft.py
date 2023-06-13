@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 import time
 import requests
 import json
@@ -43,6 +43,8 @@ class NFT(db.Model):
 class CRYPTO(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     symbol = db.Column(db.String(100), nullable=False)
+    name = db.Column(db.String(100), nullable=True)
+    sign = db.Column(db.String(10), nullable=True)
     price = db.Column(db.Integer, nullable=False)
     fetched = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
@@ -138,11 +140,18 @@ def fetch_magiceden():
                 nft.color = symbol_info["color"]
                 nft.floorPrice = data["floorPrice"]
                 nft.listedCount = data["listedCount"]
-                nft.avgPrice24hr = data["avgPrice24hr"]
+                try:
+                    nft.avgPrice24hr = data["avgPrice24hr"]
+                except:
+                    nft.avgPrice24hr = 0
                 nft.volumeAll = data["volumeAll"]
                 nft.fetched = datetime.utcnow()
                 db.session.commit()
             else:
+                try:
+                    avgPrice24hr = data["avgPrice24hr"]
+                except:
+                    data["avgPrice24hr"] = 0
                 nft = NFT(
                     symbol=data["symbol"],
                     name=symbol_info["name"],
@@ -163,34 +172,65 @@ def fetch_magiceden():
 @scheduler.task('interval', id='binance', seconds=20, misfire_grace_time=900)
 def fetchbinance():
     with app.app_context():
-        symbols = ["SOLUSDT", "ETHUSDT"]
-        for symbol in symbols:
+        # symbols = ["SOLUSDT", "SOLEUR"]
+        symbols = [
+        {
+            "symbol": "SOLUSDT",
+            "name": "USDT",
+            "sign": "$"        },
+        {
+            "symbol": "SOLEUR",
+            "name": "Euro",
+            "sign": "€"
+        }
+    ]
+        for symbol_info in symbols:
+            symbol = symbol_info["symbol"]
             url = f"https://api.binance.com/api/v3/ticker/price?symbol={symbol}"
             headers = {"accept": "application/json"}
             response = requests.get(url, headers=headers)
             data = response.json()
-            crypto = CRYPTO.query.filter_by(symbol=symbol).first()
+            crypto = CRYPTO.query.filter_by(symbol=symbol_info["symbol"]).first()
             # Add data to database, if symbol already exists, update the data
             if crypto:
                 crypto.price = data["price"]
+                crypto.name = symbol_info["name"]
+                crypto.sign = symbol_info["sign"]
                 crypto.fetched = datetime.utcnow()
                 db.session.commit()
             else:
-                crypto = CRYPTO(symbol=symbol, price=data["price"], fetched=datetime.utcnow())
+                crypto = CRYPTO(symbol=symbol_info["symbol"], price=data["price"], name=symbol_info["name"], sign=symbol_info["sign"], fetched=datetime.utcnow())
                 db.session.add(crypto)
                 db.session.commit()
 
 
-@app.route("/")
+@app.route("/", methods=['GET'])
 def index():
+    currency = request.args.get("currency", default="SOLUSDT")
     nfts = NFT.query.all()
-    sol = CRYPTO.query.filter_by(symbol="SOLUSDT").first()
+    currency = CRYPTO.query.filter_by(symbol=currency).first()
+    currencies = CRYPTO.query.all()
+    # eur = CRYPTO.query.filter_by(symbol="SOLEUR").first()
     # Sum total floor price
     total_floor_price = 0
     for nft in nfts:
         total_floor_price += nft.floorPrice
     nftfetched = NFT.query.order_by(NFT.fetched.desc()).first()
-    return render_template("nfts.html", nfts=nfts, total_floor_price=total_floor_price, sol=sol, nftfetched=nftfetched)
+    return render_template("nfts.html", currency=currency, currencies=currencies, nfts=nfts, total_floor_price=total_floor_price, nftfetched=nftfetched)
+
+@app.route("/test2", methods=['GET'])
+def test():
+    currency = request.args.get("currency", default="SOLUSDT")
+    nfts = NFT.query.all()
+    currency = CRYPTO.query.filter_by(symbol=currency).first()
+    currencies = CRYPTO.query.all()
+    # eur = CRYPTO.query.filter_by(symbol="SOLEUR").first()
+    # Sum total floor price
+    total_floor_price = 0
+    for nft in nfts:
+        total_floor_price += nft.floorPrice
+    nftfetched = NFT.query.order_by(NFT.fetched.desc()).first()
+    return render_template("nfts_test.html", currency=currency, currencies=currencies, nfts=nfts, total_floor_price=total_floor_price, nftfetched=nftfetched)
 
 
 if __name__ == "__main__":

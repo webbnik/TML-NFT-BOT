@@ -1,0 +1,14 @@
+version: '3.4'
+
+services:
+  tml-nft-bot:
+    build: ./
+    image: tml-nft-bot
+    container_name: tml-nft-bot
+    volumes:
+      - ./:/app
+    restart: always
+    ports:
+      - 127.0.0.1:8457:8457
+    environment:
+      PYTHONUNBUFFERED: 1
