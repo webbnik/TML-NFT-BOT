@@ -235,5 +235,10 @@ def index():
     nftfetched = NFT.query.order_by(NFT.fetched.desc()).first()
     return render_template("nfts.html", currency=currency, currencies=currencies, nfts=nfts, total_floor_price=total_floor_price, nftfetched=nftfetched)
 
+
 if __name__ == "__main__":
+    # Initialize the database
+    with app.app_context():
+        db.create_all()
+
     app.run(host="0.0.0.0", port=8457, debug=True)
