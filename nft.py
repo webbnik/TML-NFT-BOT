@@ -218,20 +218,5 @@ def index():
     nftfetched = NFT.query.order_by(NFT.fetched.desc()).first()
     return render_template("nfts.html", currency=currency, currencies=currencies, nfts=nfts, total_floor_price=total_floor_price, nftfetched=nftfetched)
 
-@app.route("/test2", methods=['GET'])
-def test():
-    currency = request.args.get("currency", default="SOLUSDT")
-    nfts = NFT.query.all()
-    currency = CRYPTO.query.filter_by(symbol=currency).first()
-    currencies = CRYPTO.query.all()
-    # eur = CRYPTO.query.filter_by(symbol="SOLEUR").first()
-    # Sum total floor price
-    total_floor_price = 0
-    for nft in nfts:
-        total_floor_price += nft.floorPrice
-    nftfetched = NFT.query.order_by(NFT.fetched.desc()).first()
-    return render_template("nfts_test.html", currency=currency, currencies=currencies, nfts=nfts, total_floor_price=total_floor_price, nftfetched=nftfetched)
-
-
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8457, debug=True)
