@@ -95,7 +95,7 @@ def fetch_magiceden():
                 }
             ]
 
-        discord = os.getenv("DISCORD_WEBHOOK")
+        discord_all = os.getenv("DISCORD_ALL")
         for symbol_info in symbols:
             symbol = symbol_info["symbol"]
             url = f"https://api-mainnet.magiceden.dev/v2/collections/{symbol}/stats"
@@ -145,7 +145,8 @@ def fetch_magiceden():
                 }
                 # Send message to Discord if there is a change in floor price
                 if nft.floorPrice != data["floorPrice"]:
-                    requests.post(discord, json=payload)
+                    requests.post(discord_all, json=payload)
+                    requests.post(symbol_info["webhook"], json=payload)
                 nft.name = symbol_info["name"]
                 nft.order = symbol_info["order"]
                 nft.image = symbol_info["image"]
