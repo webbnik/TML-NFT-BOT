@@ -30,7 +30,8 @@ class NFT(db.Model):
     order = db.Column(db.Integer, nullable=False)
     image = db.Column(db.String(300), nullable=False)
     url = db.Column(db.String(300), nullable=False)
-    color = db.Column(db.Integer, nullable=True)
+    color = db.Column(db.Integer, nullable=False)
+    webhook = db.Column(db.String(300), nullable=True)
     floorPrice = db.Column(db.Integer, nullable=False)
     listedCount = db.Column(db.Integer, nullable=False)
     avgPrice24hr = db.Column(db.Integer, nullable=False)
@@ -43,8 +44,8 @@ class NFT(db.Model):
 class CRYPTO(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     symbol = db.Column(db.String(100), nullable=False)
-    name = db.Column(db.String(100), nullable=True)
-    sign = db.Column(db.String(10), nullable=True)
+    name = db.Column(db.String(100), nullable=False)
+    sign = db.Column(db.String(10), nullable=False)
     price = db.Column(db.Integer, nullable=False)
     fetched = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
@@ -62,7 +63,8 @@ def fetch_magiceden():
                     "order": 1,
                     "image": "https://pbs.twimg.com/media/FZar7ZcUsAAw0wa.jpg",
                     "url": "https://magiceden.io/marketplace/tomorrowland_winter",
-                    "color": 7608595
+                    "color": 7608595,
+                    "webhook": os.getenv("DISCORD_WEBHOOK_LETTER")
                 },
                 {
                     "symbol": "the_reflection_of_love",
@@ -70,7 +72,8 @@ def fetch_magiceden():
                     "order": 2,
                     "image": "https://moon.ly/uploads/nft/e8141974-650f-4c59-80b0-3bb9397ae049.gif",
                     "url": "https://magiceden.io/marketplace/the_reflection_of_love",
-                    "color": 1274905
+                    "color": 1274905,
+                    "webhook": os.getenv("DISCORD_WEBHOOK_REFLECTION")
                 },
                 {
                     "symbol": "tomorrowland_love_unity",
@@ -78,7 +81,17 @@ def fetch_magiceden():
                     "order": 3,
                     "image": "https://img-cdn.magiceden.dev/rs:fill:400:400:0:0/plain/https://bafybeidzsht5g3rtb2crlgildg3hrbt5mtuiw6eiakxj5ckhftvrqyjvbm.ipfs.nftstorage.link/",
                     "url": "https://magiceden.io/marketplace/tomorrowland_love_unity",
-                    "color": 1643380
+                    "color": 1643380,
+                    "webhook": os.getenv("DISCORD_WEBHOOK_SYMBOL")
+                },
+                {
+                    "symbol": "the_golden_auric",
+                    "name": "The Golden Auric",
+                    "order": 0,
+                    "image": "https://img-cdn.magiceden.dev/rs:fill:400:400:0:0/plain/https://creator-hub-prod.s3.us-east-2.amazonaws.com/the_golden_auric_pfp_1682607788127.png",
+                    "url": "https://magiceden.io/marketplace/the_golden_auric",
+                    "color": 16777215,
+                    "webhook": os.getenv("DISCORD_WEBHOOK_AURIC")
                 }
             ]
 
@@ -101,12 +114,12 @@ def fetch_magiceden():
                 elif nft.floorPrice > data["floorPrice"]:
                     upordown = "decreased"
                 payload = {
-                    "username": "NFT Bot",
+                    "username": "NFT",
                     "avatar_url": "https://i.imgur.com/4M34hi2.png",
                     "embeds": [
                         {
                             "title": "Floor Price Update",
-                            "description": f"{symbol_info['name']} has been updated.",
+                            "description": f"{symbol_info['name']} has {upordown} from {data['floorPrice'] / 1000000000} SOL to {data['floorPrice'] / 1000000000} SOL",
                             "color": symbol_info["color"],
                             "fields": [
                                 {
@@ -138,6 +151,7 @@ def fetch_magiceden():
                 nft.image = symbol_info["image"]
                 nft.url = symbol_info["url"]
                 nft.color = symbol_info["color"]
+                nft.webhook = symbol_info["webhook"]
                 nft.floorPrice = data["floorPrice"]
                 nft.listedCount = data["listedCount"]
                 try:
@@ -159,6 +173,7 @@ def fetch_magiceden():
                     image=symbol_info["image"],
                     url=symbol_info["url"],
                     color=symbol_info["color"],
+                    webhook=symbol_info["webhook"],
                     floorPrice=data["floorPrice"],
                     listedCount=data["listedCount"],
                     avgPrice24hr=data["avgPrice24hr"],
@@ -214,7 +229,8 @@ def index():
     # Sum total floor price
     total_floor_price = 0
     for nft in nfts:
-        total_floor_price += nft.floorPrice
+        if nft.order != 0:
+            total_floor_price += nft.floorPrice
     nftfetched = NFT.query.order_by(NFT.fetched.desc()).first()
     return render_template("nfts.html", currency=currency, currencies=currencies, nfts=nfts, total_floor_price=total_floor_price, nftfetched=nftfetched)
 

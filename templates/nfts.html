@@ -7,7 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <title>Tomorrowland NFTs</title>
-    <link rel="icon" type="image/png" href="favicon.ico">
+    <!-- <link rel="icon" type="image/png" href="favicon.ico"> -->
 
     <script>
         $(document).ready(function () {
@@ -57,6 +57,11 @@
             color: black;
         }
 
+        .link {
+            text-decoration: none;
+            color: black;
+        }
+
         .nft-image {
             background-repeat: no-repeat;
             background-position: right;
@@ -78,6 +83,7 @@
 
 <body>
     {% for nft in nfts | sort(attribute='order') %}
+    {% if nft.order != 0 %}
     <div class="col-lg-4 col-md-12 col-sm-12 card-container {{ nft.symbol }}">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
@@ -96,14 +102,22 @@
             </div>
         </div>
     </div>
+    {% endif %}
     {% endfor %}
 
     <div class="col-lg-4 col-md-12 col-sm-12 card-container floorprice">
         <div class="card">
             <div class="card-body">
-                <p class="card-text">Total: <b id="total-sol-amount">{{ '%.2f' | format(total_floor_price / 1000000000) }} SOL</b> (<span id="total-currency-amount">{{ '%.2f' | format(total_floor_price / 1000000000 * currency.price) }}</span>{{ currency.sign }})
+
+                <p class="card-text totalFloor">Total: <b>{{ '%.2f' | format(total_floor_price / 1000000000) }} SOL</b> (<span>{{ '%.2f' | format(total_floor_price / 1000000000 * currency.price) }}</span>{{ currency.sign }})
                     <br><span class="date">{{ nftfetched.fetched.strftime('%d-%m-%Y %H:%M:%S') }} UTC</span>
                 </p>
+
+
+                <p class="card-text calculatedFloor" style="display: none;">Calculated: <b id="total-sol-amount">0 SOL</b> (<span id="total-currency-amount">0</span>{{ currency.sign }})
+                    <br><span class="date">{{ nftfetched.fetched.strftime('%d-%m-%Y %H:%M:%S') }} UTC</span>
+                </p>
+
                 <p class="card-text">1 SOL = <b>{{ '%.2f' | format(currency.price) }}{{ currency.sign }}</b>
                     <br><span class="date">{{ currency.fetched.strftime('%d-%m-%Y %H:%M:%S') }} UTC</span>
                 </p>
@@ -112,19 +126,63 @@
                     <a href="?currency={{ currency.symbol }}">{{ currency.name|upper }}</a> /
 
                     {% endfor %}
-                    <a href="#" class="enable-calculator-link" onclick="toggleCalculator()">Calculator</a>
+                    <a href="#" class="enable-calculator-link" onclick="toggleCalculator()">Calculator</a> /
+                    <a href="#" id="toggle-link" onclick="toggleNFTCards(event)">Collectibles</a>
+
                 </p>
-                <p class="card-text"></p>
+                Problems? Feedback?:
+                <a href="https://discord.gg/WGYaCcApvQ" class="link" target="_blank"><i class="fa-brands fa-discord" alt="Feedback and NFT-bot"></i></a>
+                <a href="https://github.com/webbnik/TML-NFT-BOT" class="link" target="_blank"><i class="fa-brands fa-github"></i></a>
             </div>
         </div>
     </div>
 
+    <div id="nft-cards-container" style="display: none;">
+        {% for nft in nfts | sort(attribute='order') %}
+        {% if nft.order == 0 %}
+        <div class="col-lg-4 col-md-12 col-sm-12 card-container {{ nft.symbol }}">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title"><a href="https://magiceden.io/marketplace/{{ nft.symbol }}" target="_blank" class="card-link">{{ nft.name }} <i class="fa fa-external-link" aria-hidden="true"></i></a></h5>
+                    <h6>#{{ nft.order }}</h6>
+                </div>
+                <div class="card-body nft-image" style="background-image: url('{{ nft.image }}');">
+                    <p class="card-text">Floor: <b>{{ '%.2f' | format(nft.floorPrice / 1000000000) }} SOL</b> ({{ '%.2f' | format(nft.floorPrice / 1000000000 * currency.price) }}{{ currency.sign }})</p>
+                    <p class="card-text">Listed: {{ nft.listedCount }} pcs</p>
+                    <p class="card-text">Average 24h: {{ '%.2f' | format(nft.avgPrice24hr / 1000000000) }} SOL</p>
+
+                    <!-- Calculator fields for each NFT -->
+                    <div class="calculator-fields">
+                        <input type="number" class="nft-quantity" data-floor-price="{{ nft.floorPrice }}" data-currency-price="{{ currency.price }}" value="0">
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+
     <script>
+        function toggleNFTCards(event) {
+            event.preventDefault();
+            // Get the NFT cards container element
+            const nftCardsContainer = document.getElementById('nft-cards-container');
+            // Toggle the visibility of the NFT cards container
+            nftCardsContainer.style.display = nftCardsContainer.style.display === 'none' ? 'block' : 'none';
+            // Update the link text based on the visibility state
+            event.target.textContent = nftCardsContainer.style.display === 'none' ? 'Collectibles' : 'Hide Collectibles';
+        }
+
         function toggleCalculator() {
             const calculatorFields = document.querySelectorAll('.calculator-fields');
             calculatorFields.forEach(field => {
                 field.classList.toggle('show');
             });
+            // Hide totalFloor and show calculatedFloor
+            const totalFloor = document.querySelector('.totalFloor');
+            const calculatedFloor = document.querySelector('.calculatedFloor');
+            totalFloor.style.display = totalFloor.style.display === 'none' ? 'block' : 'none';
+            calculatedFloor.style.display = calculatedFloor.style.display === 'none' ? 'block' : 'none';
         }
 
         function calculateTotal() {
