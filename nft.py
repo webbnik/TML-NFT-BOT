@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for, flash
 import time
 import requests
 import json
@@ -236,4 +236,4 @@ def index():
     return render_template("nfts.html", currency=currency, currencies=currencies, nfts=nfts, total_floor_price=total_floor_price, nftfetched=nftfetched)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8457, debug=True)
+    app.run(host="0.0.0.0", port=8457, debug=False)
