@@ -1,7 +1,7 @@
 FROM python:slim-buster
 
-RUN groupadd --gid 1001 pythongroup
-RUN useradd --uid 1001 --gid pythongroup --home /app pythonuser
+RUN groupadd --gid 5005 pythongroup
+RUN useradd --uid 5060 --gid pythongroup --home /app pythonuser
 
 RUN mkdir /app
 
@@ -17,4 +17,4 @@ USER pythonuser
 
 EXPOSE 8457
 
-CMD [ "python", "-u", "./nft.py" ]
+CMD [ "python", "-u", "./app.py" ]
