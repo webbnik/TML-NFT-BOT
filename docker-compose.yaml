@@ -9,7 +9,8 @@ services:
       - ./:/app
     restart: always
     ports:
-      - 127.0.0.1:8457:8457
-    command: python -u ./nft.py
+      - 127.0.0.1:8457:8000
+    # command: python -u ./nft.py
+    command: gunicorn -b 0.0.0.0:8000 -w 2 --timeout 10 --reload --preload nft:app
     environment:
       PYTHONUNBUFFERED: 1

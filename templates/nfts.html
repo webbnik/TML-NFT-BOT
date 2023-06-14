@@ -1,85 +1,23 @@
-<html>
+<html lang="en" data-bs-theme="dark">
 
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.4/dist/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+    <!-- Stylesheets -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="{{ url_for('static', filename='css/dist/bootstrap.min.css') }}" rel="stylesheet" />
+
+    <link href="{{ url_for('static', filename='css/nft.css') }}" rel="stylesheet" />
+
+
+    <!-- JavaScripts -->
+    <script src="{{ url_for('static', filename='js/dist/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/dist/bootstrap.bundle.min.js') }}"></script>
+
+    <script src="{{ url_for('static', filename='js/bootstrap_darkmode_selector.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/calculate_fields_init.js') }}"></script>
+
     <title>Tomorrowland NFTs</title>
-    <!-- <link rel="icon" type="image/png" href="favicon.ico"> -->
-
-    <script>
-        $(document).ready(function () {
-            // Hide the calculator fields initially
-            $('.calculator-fields').hide();
-
-            // Click event handler for "Enable calculator" link
-            $('.enable-calculator-link').click(function (e) {
-                e.preventDefault();
-                toggleCalculator();
-            });
-
-            // Function to toggle calculator fields visibility
-            function toggleCalculator() {
-                $('.calculator-fields').toggle();
-            }
-        });
-    </script>
-
-    <style>
-        body {
-            padding: 4px;
-        }
-
-        .card-container {
-            padding: 4px;
-        }
-
-        .floorprice {
-            text-align: center;
-            font-size: 16px;
-            line-height: 1;
-        }
-
-        .date {
-            font-size: 9px;
-            line-height: 0.9;
-            color: gray;
-        }
-
-        .card-header {
-            padding: 6px 10px 0px 8px;
-        }
-
-        .card-link {
-            text-decoration: none;
-            color: black;
-        }
-
-        .contact {
-            text-decoration: none;
-            color: black;
-            text-align: center;
-        }
-
-        .nft-image {
-            background-repeat: no-repeat;
-            background-position: right;
-            background-size: 125px;
-            margin-right: 10px;
-        }
-
-        .currency {
-            /* text-align: center; */
-            margin-left: 20px;
-        }
-
-        .fa {
-            font-size: 13px;
-            opacity: 0.7;
-        }
-    </style>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.ico')}}">
 </head>
 
 <body>
@@ -96,7 +34,6 @@
                 <p class="card-text">Listed: {{ nft.listedCount }} pcs</p>
                 <p class="card-text">Average 24h: {{ '%.2f' | format(nft.avgPrice24hr / 1000000000) }} SOL</p>
 
-                <!-- Calculator fields for each NFT -->
                 <div class="calculator-fields">
                     <input type="number" class="nft-quantity" data-floor-price="{{ nft.floorPrice }}" data-currency-price="{{ currency.price }}" value="0">
                 </div>
@@ -109,11 +46,9 @@
     <div class="col-lg-4 col-md-12 col-sm-12 card-container floorprice">
         <div class="card">
             <div class="card-body">
-
                 <p class="card-text totalFloor">Total: <b>{{ '%.2f' | format(total_floor_price / 1000000000) }} SOL</b> (<span>{{ '%.2f' | format(total_floor_price / 1000000000 * currency.price) }}</span>{{ currency.sign }})
                     <br><span class="date">{{ nftfetched.fetched.strftime('%d-%m-%Y %H:%M:%S') }} UTC</span>
                 </p>
-
 
                 <p class="card-text calculatedFloor" style="display: none;">Calculated: <b id="total-sol-amount">0 SOL</b> (<span id="total-currency-amount">0</span>{{ currency.sign }})
                     <br><span class="date">{{ nftfetched.fetched.strftime('%d-%m-%Y %H:%M:%S') }} UTC</span>
@@ -122,15 +57,34 @@
                 <p class="card-text">1 SOL = <b>{{ '%.2f' | format(currency.price) }}{{ currency.sign }}</b>
                     <br><span class="date">{{ currency.fetched.strftime('%d-%m-%Y %H:%M:%S') }} UTC</span>
                 </p>
-                <p class="card-text">
-                    {% for currency in currencies %}
-                    <a href="?currency={{ currency.symbol }}">{{ currency.name|upper }}</a> /
 
-                    {% endfor %}
-                    <a href="#" class="enable-calculator-link" onclick="toggleCalculator()">Calculator</a> /
-                    <a href="#" id="toggle-link" onclick="toggleNFTCards(event)">Collectibles</a>
+                <div class="btn-group dropup-center">
+                    <button type="button" id="theme" class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Theme</button>
+                    <div class="dropdown-menu dropdownitems" aria-labelledby="theme">
+                        <a class="dropdown-item" data-bs-theme-value="light" href="#">Light</a>
+                        <a class="dropdown-item" data-bs-theme-value="dark" href="#">Dark</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" data-bs-theme-value="auto" href="#">Auto</a>
+                    </div>
+                </div>
 
-                </p>
+                <div class="btn-group dropup-center">
+                    <button type="button" id="currency" class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Currency</button>
+                    <div class="dropdown-menu dropdownitems" aria-labelledby="currency">
+                        {% for currency in currencies %}
+                        <a href="?currency={{ currency.symbol }}" class="dropdown-item">{{ currency.sign }} - {{ currency.name|upper }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="btn-group dropup-center">
+                    <button type="button" id="options" class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Options</button>
+                    <div class="dropdown-menu dropdownitems" aria-labelledby="options">
+                        <a href="#" class="dropdown-item enable-calculator-link" onclick="toggleCalculator()">Calculator</a>
+                        <a href="#" class="dropdown-item" id="toggle-link" onclick="toggleNFTCards(event)">Collectibles</a>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -165,66 +119,7 @@
             <i class="fa-brands fa-discord" alt="Feedback and NFT-bot"></i></a>
     </div>
 
-    <script>
-        function toggleNFTCards(event) {
-            event.preventDefault();
-            // Get the NFT cards container element
-            const nftCardsContainer = document.getElementById('nft-cards-container');
-            // Toggle the visibility of the NFT cards container
-            nftCardsContainer.style.display = nftCardsContainer.style.display === 'none' ? 'block' : 'none';
-            // Update the link text based on the visibility state
-            event.target.textContent = nftCardsContainer.style.display === 'none' ? 'Collectibles' : 'Hide Collectibles';
-        }
-
-        function toggleCalculator() {
-            const calculatorFields = document.querySelectorAll('.calculator-fields');
-            calculatorFields.forEach(field => {
-                field.classList.toggle('show');
-            });
-            // Hide totalFloor and show calculatedFloor
-            const totalFloor = document.querySelector('.totalFloor');
-            const calculatedFloor = document.querySelector('.calculatedFloor');
-            totalFloor.style.display = totalFloor.style.display === 'none' ? 'block' : 'none';
-            calculatedFloor.style.display = calculatedFloor.style.display === 'none' ? 'block' : 'none';
-        }
-
-        function calculateTotal() {
-            const quantityInputs = document.querySelectorAll('.nft-quantity');
-            let totalSOL = 0;
-            let totalCurrency = 0;
-
-            quantityInputs.forEach(input => {
-                const quantity = parseInt(input.value);
-                const floorPrice = parseFloat(input.dataset.floorPrice);
-                const currencyPrice = parseFloat(input.dataset.currencyPrice);
-                const subtotalSOL = quantity * (floorPrice / 1000000000);
-                const subtotalCurrency = quantity * (floorPrice / 1000000000 * currencyPrice);
-
-                totalSOL += subtotalSOL;
-                totalCurrency += subtotalCurrency;
-            });
-
-            return {
-                totalSOL,
-                totalCurrency
-            };
-        }
-
-        function updateTotal() {
-            const totalSOLField = document.getElementById('total-sol-amount');
-            const totalCurrencyField = document.getElementById('total-currency-amount');
-            const { totalSOL, totalCurrency } = calculateTotal();
-
-            totalSOLField.textContent = totalSOL.toFixed(2);
-            totalCurrencyField.textContent = totalCurrency.toFixed(2);
-        }
-
-        // Add event listener to quantity inputs
-        const quantityInputs = document.querySelectorAll('.nft-quantity');
-        quantityInputs.forEach(input => {
-            input.addEventListener('input', updateTotal);
-        });
-    </script>
+    <script src="{{ url_for('static', filename='js/calculate_fields.js') }}"></script>
 </body>
 
 </html>
