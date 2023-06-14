@@ -243,10 +243,4 @@ if __name__ == "__main__":
     with app.app_context():
         app.run()
 
-    try:
-        subprocess.run(["flask", "db", "init"])
-    except Exception as e:
-        print(f"An error occurred during database initialization: {str(e)}")
-    subprocess.run(["flask", "db", "migrate"])
-    subprocess.run(["flask", "db", "upgrade"])
     app.run(host="0.0.0.0", port=8457, debug=True)
