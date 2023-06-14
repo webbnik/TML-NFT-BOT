@@ -1,27 +1,30 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, url_for
 import time
 import requests
 import json
 from dotenv import load_dotenv
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
+from flask_migrate import Migrate, upgrade, init
 from flask_apscheduler import APScheduler
+import subprocess
+from apscheduler.schedulers.blocking import BlockingScheduler
+from apscheduler.schedulers.background import BackgroundScheduler
 
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+from sqlalchemy import create_engine
+
+jobstores = { 'default': SQLAlchemyJobStore(url='sqlite:///instance/jobs.sqlite')}
+scheduler = BackgroundScheduler(jobstores=jobstores)
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///nft.db"
-
 db = SQLAlchemy()
+load_dotenv()
+
 db.init_app(app)
 migrate = Migrate(app, db)
-
-
-scheduler = APScheduler()
-scheduler.init_app(app)
-scheduler.start()
-
 
 class NFT(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -32,14 +35,12 @@ class NFT(db.Model):
     url = db.Column(db.String(300), nullable=False)
     color = db.Column(db.Integer, nullable=False)
     webhook = db.Column(db.String(300), nullable=True)
+    # test = db.Column(db.String(300), nullable=True)
     floorPrice = db.Column(db.Integer, nullable=False)
     listedCount = db.Column(db.Integer, nullable=False)
     avgPrice24hr = db.Column(db.Integer, nullable=False)
     volumeAll = db.Column(db.Integer, nullable=False)
     fetched = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-
-    def __repr__(self):
-        return f"Symbol: {self.symbol}, Floor Price: {self.floorPrice}, Listed Count: {self.listedCount}, Average Price 24hr: {self.avgPrice24hr}, Volume All: {self.volumeAll}"
 
 class CRYPTO(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -49,13 +50,8 @@ class CRYPTO(db.Model):
     price = db.Column(db.Integer, nullable=False)
     fetched = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
-    def __repr__(self):
-        return f"Symbol: {self.symbol}, Price: {self.price}"
-
-@scheduler.task('interval', id='magiceden', seconds=25, misfire_grace_time=900)
 def fetch_magiceden():
     with app.app_context():
-    # with scheduler.app.app_context():
         symbols = [
                 {
                     "symbol": "tomorrowland_winter",
@@ -97,6 +93,7 @@ def fetch_magiceden():
 
         discord_all = os.getenv("DISCORD_ALL")
         for symbol_info in symbols:
+            # print(f"Fetching Magic Eden at {datetime.now()} - {symbol_info['symbol']}")
             symbol = symbol_info["symbol"]
             url = f"https://api-mainnet.magiceden.dev/v2/collections/{symbol}/stats"
             headers = {"accept": "application/json"}
@@ -119,17 +116,17 @@ def fetch_magiceden():
                     "embeds": [
                         {
                             "title": f"{symbol_info['name']}",
-                            "description": f"Has {upordown} from {data['floorPrice'] / 1000000000} SOL to {data['floorPrice'] / 1000000000} SOL",
+                            "description": f"Has {upordown} from {nft.floorPrice / 1000000000} SOL to {data['floorPrice'] / 1000000000} SOL",
                             "color": symbol_info["color"],
                             "fields": [
                                 {
-                                    "name": "New floor Price",
-                                    "value": f"{data['floorPrice'] / 1000000000} SOL",
+                                    "name": "Old floor Price",
+                                    "value": f"{nft.floorPrice / 1000000000} SOL",
                                     "inline": True
                                 },
                                 {
-                                    "name": "Old floor Price",
-                                    "value": f"{nft.floorPrice / 1000000000} SOL",
+                                    "name": "New floor Price",
+                                    "value": f"{data['floorPrice'] / 1000000000} SOL",
                                     "inline": True
                                 }
                             ],
@@ -185,9 +182,10 @@ def fetch_magiceden():
                 db.session.commit()
             time.sleep(1)
 
-@scheduler.task('interval', id='binance', seconds=20, misfire_grace_time=900)
+
 def fetchbinance():
     with app.app_context():
+        # with lock:
         # symbols = ["SOLUSDT", "SOLEUR"]
         symbols = [
         {
@@ -201,6 +199,7 @@ def fetchbinance():
         }
     ]
         for symbol_info in symbols:
+            # print(f"Fetching Binance at {datetime.now()} - {symbol_info['symbol']}")
             symbol = symbol_info["symbol"]
             url = f"https://api.binance.com/api/v3/ticker/price?symbol={symbol}"
             headers = {"accept": "application/json"}
@@ -236,9 +235,18 @@ def index():
     return render_template("nfts.html", currency=currency, currencies=currencies, nfts=nfts, total_floor_price=total_floor_price, nftfetched=nftfetched)
 
 
-if __name__ == "__main__":
-    # Initialize the database
-    with app.app_context():
-        db.create_all()
+scheduler.add_job(fetch_magiceden, 'interval', seconds=20, id="magiceden", replace_existing=True, next_run_time=datetime.now().replace(second=0, microsecond=0) + timedelta(minutes=1))
+scheduler.add_job(fetchbinance, 'interval', seconds=20, id="binance", replace_existing=True, next_run_time=datetime.now().replace(second=10, microsecond=0) + timedelta(minutes=1))
+scheduler.start()
 
+if __name__ == "__main__":
+    with app.app_context():
+        app.run()
+
+    try:
+        subprocess.run(["flask", "db", "init"])
+    except Exception as e:
+        print(f"An error occurred during database initialization: {str(e)}")
+    subprocess.run(["flask", "db", "migrate"])
+    subprocess.run(["flask", "db", "upgrade"])
     app.run(host="0.0.0.0", port=8457, debug=True)
