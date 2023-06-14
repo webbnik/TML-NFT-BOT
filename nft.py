@@ -9,9 +9,9 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate, upgrade, init
 from flask_apscheduler import APScheduler
 import subprocess
+from jinja2.exceptions import UndefinedError
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.schedulers.background import BackgroundScheduler
-
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from sqlalchemy import create_engine
 
@@ -233,6 +233,11 @@ def index():
             total_floor_price += nft.floorPrice
     nftfetched = NFT.query.order_by(NFT.fetched.desc()).first()
     return render_template("nfts.html", currency=currency, currencies=currencies, nfts=nfts, total_floor_price=total_floor_price, nftfetched=nftfetched)
+
+@app.errorhandler(UndefinedError)
+def handle_undefined_error(e):
+    # Logic to handle the error and display a custom error page
+    return render_template('error.html', error_message=str(e)), 500
 
 
 scheduler.add_job(fetch_magiceden, 'interval', seconds=20, id="magiceden", replace_existing=True, next_run_time=datetime.now().replace(second=0, microsecond=0) + timedelta(minutes=1))

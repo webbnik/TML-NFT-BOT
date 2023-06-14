@@ -5,10 +5,16 @@ services:
     build: ./
     image: tml-nft-bot
     container_name: tml-nft-bot
-    volumes:
-      - ./:/app
     restart: always
     ports:
-      - 127.0.0.1:8457:8457
+      - 127.0.0.1:8457:8000
+    command:
+      - bash
+      - -c
+      - |
+        flask db init || true
+        flask db migrate
+        flask db upgrade
+        gunicorn -b 0.0.0.0:8000 -w 2 --timeout 10 --reload --preload nft:app
     environment:
       PYTHONUNBUFFERED: 1
