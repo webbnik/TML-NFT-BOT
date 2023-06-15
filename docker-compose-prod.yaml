@@ -4,7 +4,7 @@ services:
   tml-nft-bot:
     build: ./
     image: tml-nft-bot
-    container_name: tml-nft-bot
+    container_name: tml-nft-bot:${GITHUB_SHA}
     restart: always
     ports:
       - 127.0.0.1:8457:8000
