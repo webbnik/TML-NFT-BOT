@@ -12,7 +12,7 @@ env:
 
 jobs:
   build:
-    runs-on: [self-hosted, console]
+    runs-on: [self-hosted, partypooper]
     name: Checkout code and build container
     steps:
       - name: Checkout code
@@ -23,7 +23,7 @@ jobs:
           docker-compose -f docker-compose-prod.yaml build -t tml-nft-bot:${{ github.sha }}
 
   trivy-scan:
-    runs-on: [self-hosted, internal]
+    runs-on: [self-hosted, partypooper]
     name: Scan container with trivy
     needs: build
     steps:
@@ -39,7 +39,7 @@ jobs:
           cache-dir: /tmp/.cache
 
   env-files:
-    runs-on: [self-hosted, console]
+    runs-on: [self-hosted, partypooper]
     name: Create env files
     needs: [trivy-scan]
     steps:
@@ -54,7 +54,7 @@ jobs:
           
 
   deploy:
-    runs-on: [self-hosted, console]
+    runs-on: [self-hosted, partypooper]
     name: Deploy to swarm, cleanup and post notification
     needs: env-files
     steps:
