@@ -105,6 +105,7 @@ def fetch_magiceden():
             if nft:
                 # If floor price has increased, send message to Discord
                 upordown = "unchanged"
+                upordowngraphic = ""
                 if nft.floorPrice < data["floorPrice"]:
                     upordown = "increased"
                     upordowngraphic = "https://nft.hardy.se/static/img/increase.png"
