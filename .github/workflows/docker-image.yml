@@ -55,8 +55,8 @@ jobs:
           echo DISCORD_ALL=${{ secrets.DISCORD_ALL }} >> .env
           echo DISCORD_WEBHOOK_REFLECTION=${{ secrets.DISCORD_WEBHOOK_REFLECTION }} >> .env
           echo DISCORD_WEBHOOK_LETTER=${{ secrets.DISCORD_WEBHOOK_LETTER }} >> .env
-          echo DISCORD_WEBHOOK_AURIC=${{ secrets.DISCORD_WEBHOOK_AURIC }} >> .env
           echo DISCORD_WEBHOOK_SYMBOL=${{ secrets.DISCORD_WEBHOOK_SYMBOL }} >> .env
+          echo DISCORD_WEBHOOK_AURIC=${{ secrets.DISCORD_WEBHOOK_AURIC }} >> .env
 
   deploy:
     runs-on: [self-hosted, partypooper]
@@ -68,10 +68,10 @@ jobs:
           GITHUB_SHA: ${{ github.sha }}
         run: docker-compose -f docker-compose-prod.yaml up -d
 
-      # - name: Clean up
-      #   if: always()
-      #   run: |
-      #     rm -f .env
+      - name: Clean up
+        if: always()
+        run: |
+          rm -f .env
 
       - name: Post status notification to Discord
         uses: sarisia/actions-status-discord@v1
