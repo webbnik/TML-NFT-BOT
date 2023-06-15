@@ -34,6 +34,10 @@ services:
     networks:
       - prometheus_back-tier
 
+networks:
+  prometheus_back-tier:
+    external: true
+
 secrets:
   env-file:
     name: env-file-${GITHUB_SHA}
