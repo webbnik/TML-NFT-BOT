@@ -107,17 +107,24 @@ def fetch_magiceden():
                 upordown = "unchanged"
                 if nft.floorPrice < data["floorPrice"]:
                     upordown = "increased"
+                    upordowngraphic = "https://nft.hardy.se/static/img/increase.png"
                 # If floor price has decreased, send message to Discord
                 elif nft.floorPrice > data["floorPrice"]:
                     upordown = "decreased"
+                    upordowngraphic = "https://nft.hardy.se/static/img/decrease.png"
                 payload = {
                     "username": "NFT",
                     "avatar_url": "https://i.imgur.com/4M34hi2.png",
                     "embeds": [
                         {
                             "title": f"{symbol_info['name']}",
+                            "url": f"{symbol_info['url']}",
                             "description": f"Has {upordown} from {nft.floorPrice / 1000000000} SOL to {data['floorPrice'] / 1000000000} SOL",
                             "color": symbol_info["color"],
+                            "author": {
+                            "name": "nft.hardy.se",
+                            "url": "https://nft.hardy.se/"
+                            },
                             "fields": [
                                 {
                                     "name": "Old floor Price",
@@ -135,7 +142,7 @@ def fetch_magiceden():
                             },
                             "footer": {
                                 "text": f"Floor price has {upordown}",
-                                "icon_url": "https://example.com/up_icon.png"
+                                "icon_url": f"{upordowngraphic}"
                             }
                         }
                     ]
