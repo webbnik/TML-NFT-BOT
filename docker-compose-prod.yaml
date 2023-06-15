@@ -18,3 +18,11 @@ services:
         gunicorn -b 0.0.0.0:8000 -w 2 --timeout 10 --reload --preload nft:app
     environment:
       PYTHONUNBUFFERED: 1
+    secrets:
+      - source: env-file
+        target: /app/.env
+
+secrets:
+  env-file:
+    name: env-file-${GITHUB_SHA}
+    file: ./.env
