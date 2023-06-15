@@ -52,6 +52,7 @@ jobs:
     steps:
       - name: Create env file for front
         run: |
+          touch .env
           echo DISCORD_ALL=${{ secrets.DISCORD_ALL }} >> .env
           echo DISCORD_WEBHOOK_REFLECTION=${{ secrets.DISCORD_WEBHOOK_REFLECTION }} >> .env
           echo DISCORD_WEBHOOK_LETTER=${{ secrets.DISCORD_WEBHOOK_LETTER }} >> .env
