@@ -36,5 +36,6 @@ services:
 
 secrets:
   env-file:
+    external: true
     name: env-file-${GITHUB_SHA}
     file: ./.env
