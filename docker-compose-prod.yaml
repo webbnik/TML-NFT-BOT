@@ -24,6 +24,7 @@ services:
 
   statsd-exporter:
     image: prom/statsd-exporter:v0.22.4
+    container_name: statsd-exporter
     ports:
       - "127.0.0.1:9102:9102"
     volumes:
@@ -31,11 +32,7 @@ services:
     command:
       - --statsd.mapping-config=/statsd/statsd.conf
     networks:
-      - back-tier
-
-networks:
-  back-tier:
-
+      - prometheus_back-tier
 
 secrets:
   env-file:
