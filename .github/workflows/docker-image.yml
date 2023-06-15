@@ -11,9 +11,18 @@ env:
   DISCORD_WEBHOOK_AURIC: ${{ secrets.DISCORD_WEBHOOK_AURIC }}
 
 jobs:
+  fake-env:
+    runs-on: [self-hosted, partypooper]
+    name: Create fake env file
+    steps:
+      - name: Create fake env file
+        run: |
+          touch .env
+
   build:
     runs-on: [self-hosted, partypooper]
     name: Checkout code and build container
+    needs: fake-env
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
