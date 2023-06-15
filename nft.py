@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, url
 import time
 import requests
 import json
+import logging
 from dotenv import load_dotenv
 import os
 from datetime import datetime, timedelta
@@ -257,7 +258,17 @@ scheduler.add_job(fetch_magiceden, 'interval', seconds=20, id="magiceden", repla
 scheduler.add_job(fetchbinance, 'interval', seconds=20, id="binance", replace_existing=True, next_run_time=datetime.now().replace(second=10, microsecond=0) + timedelta(minutes=1))
 scheduler.start()
 
+# Run as gunicorn
+if __name__ != '__main__':
+    # Use gunicorn's logger to replace flask's default logger
+    gunicorn_logger = logging.getLogger('gunicorn.error')
+    app.logger.handlers = gunicorn_logger.handlers
+    app.logger.setLevel(gunicorn_logger.level)
+
+
+# Run as standalone flask
 if __name__ == "__main__":
+
     with app.app_context():
         app.run()
 
