@@ -29,7 +29,7 @@ jobs:
     steps:
       - uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "tml-nft-bot:${{ github.sha }}"
+          image-ref: "tml-nft-bot2:${{ github.sha }}"
           format: "table"
           exit-code: "1"
           ignore-unfixed: true
@@ -38,10 +38,22 @@ jobs:
           ignore-policy: ignore-vuln-policy.rego
           cache-dir: /tmp/.cache
 
+  check-trivy-status:
+    runs-on: [self-hosted, partypooper]
+    name: Check Trivy scan status
+    needs: trivy-scan
+    if: steps.trivy-scan.outcome != 'success'
+    steps:
+      - name: Set Trivy scan status
+        id: set-trivy-status
+        run: echo "::set-output name=trivy-status::failure"
+        
+
   env-files:
     runs-on: [self-hosted, partypooper]
     name: Create env files
-    needs: [trivy-scan]
+    needs: [trivy-scan, check-trivy-status]
+    if: needs.check-trivy-status.outputs.trivy-status != 'failure'
     steps:
       - name: Create env file for front
         run: |
