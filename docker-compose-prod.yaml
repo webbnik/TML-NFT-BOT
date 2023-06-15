@@ -25,11 +25,17 @@ services:
   statsd-exporter:
     image: prom/statsd-exporter:v0.22.4
     ports:
-      - "9102:9102"
+      - "127.0.0.1:9102:9102"
     volumes:
       - ./conf/statsd.conf:/statsd/statsd.conf
     command:
       - --statsd.mapping-config=/statsd/statsd.conf
+    networks:
+      - back-tier
+
+networks:
+  back-tier:
+
 
 secrets:
   env-file:
