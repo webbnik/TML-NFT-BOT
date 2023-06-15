@@ -199,11 +199,16 @@ def fetchbinance():
         {
             "symbol": "SOLUSDT",
             "name": "USDT",
-            "sign": "$"        },
+            "sign": "$"
+        },
         {
             "symbol": "SOLEUR",
             "name": "Euro",
             "sign": "€"
+        },
+        {  "symbol": "SOLGBP",
+            "name": "GBP",
+            "sign": "£"
         }
     ]
         for symbol_info in symbols:
