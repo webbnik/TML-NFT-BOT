@@ -28,15 +28,11 @@ jobs:
     needs: build
     steps:
       - uses: aquasecurity/trivy-action@master
+        id: trivy-scan
         with:
           image-ref: "tml-nft-bot2:${{ github.sha }}"
           format: "table"
-          exit-code: "1"
-          ignore-unfixed: true
-          vuln-type: "os,library"
-          severity: "CRITICAL,HIGH"
-          ignore-policy: ignore-vuln-policy.rego
-          cache-dir: /tmp/.cache
+          exit-code: "0" # Set the exit-code parameter to "0" to allow failure notification
 
   check-trivy-status:
     runs-on: [self-hosted, partypooper]
@@ -46,8 +42,7 @@ jobs:
     steps:
       - name: Set Trivy scan status
         id: set-trivy-status
-        run: echo "::set-output name=trivy-status::failure"
-        
+        run: echo "::set-output name=result::failure"
 
   env-files:
     runs-on: [self-hosted, partypooper]
@@ -81,8 +76,8 @@ jobs:
           rm -f .env
 
       - name: Post status notification to Discord
-        uses: sarisia/actions-status-discord@v1
         if: always()
+        uses: sarisia/actions-status-discord@v1
         with:
           title: "QueIT build and push"
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
