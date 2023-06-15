@@ -15,12 +15,21 @@ services:
         flask db init || true
         flask db migrate
         flask db upgrade
-        gunicorn -b 0.0.0.0:8000 -w 2 --timeout 10 --reload --preload nft:app
+        gunicorn -b 0.0.0.0:8000 --statsd-host=statsd-exporter:9125 --statsd-prefix=tml-nft-bot -w 2 --timeout 10 --reload --preload nft:app
     environment:
       PYTHONUNBUFFERED: 1
     secrets:
       - source: env-file
         target: /app/.env
+
+  statsd-exporter:
+    image: prom/statsd-exporter:v0.22.4
+    ports:
+      - 127.0.0.1:9102:9102
+    volumes:
+      - ./conf/statsd.conf:/statsd/statsd.conf
+    command:
+      - --statsd.mapping-config=/statsd/statsd.conf
 
 secrets:
   env-file:
