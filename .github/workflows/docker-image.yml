@@ -22,33 +22,33 @@ jobs:
         run: |
           docker-compose -f docker-compose-prod.yaml build
 
-  # trivy-scan:
-  #   runs-on: [self-hosted, partypooper]
-  #   name: Scan container with trivy
-  #   needs: build
-  #   steps:
-  #     - uses: aquasecurity/trivy-action@master
-  #       with:
-  #         image-ref: "tml-nft-bot:${{ github.sha }}"
-  #         format: "table"
-  #         exit-code: "1"
-  #         ignore-unfixed: true
-  #         vuln-type: "os,library"
-  #         severity: "CRITICAL,HIGH"
-  #         ignore-policy: ignore-vuln-policy.rego
-  #         cache-dir: /tmp/.cache
+  trivy-scan:
+    runs-on: [self-hosted, partypooper]
+    name: Scan container with trivy
+    needs: build
+    steps:
+      - uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "tml-nft-bot:${{ github.sha }}"
+          format: "table"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+          ignore-policy: ignore-vuln-policy.rego
+          cache-dir: /tmp/.cache
 
-  #     - name: Post status notification to Discord
-  #       uses: sarisia/actions-status-discord@v1
-  #       if: failure()
-  #       with:
-  #         title: "QueIT build and push"
-  #         webhook: ${{ secrets.DISCORD_WEBHOOK }}
+      - name: Post status notification to Discord
+        uses: sarisia/actions-status-discord@v1
+        if: failure()
+        with:
+          title: "QueIT build and push"
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
 
   env-files:
     runs-on: [self-hosted, partypooper]
     name: Create env files
-    # needs: [trivy-scan]
+    needs: [trivy-scan]
     steps:
       - name: Create env file for front
         run: |
