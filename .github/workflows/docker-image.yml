@@ -29,7 +29,7 @@ jobs:
     steps:
       - uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "tml-nft-bots:${{ github.sha }}"
+          image-ref: "tml-nft-bot:${{ github.sha }}"
           format: "table"
           exit-code: "1"
           ignore-unfixed: true
