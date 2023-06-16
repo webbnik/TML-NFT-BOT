@@ -1,82 +1,82 @@
-on:
-  push:
-    branches:
-      - master
+# on:
+#   push:
+#     branches:
+#       - master
   
-env:
-  DISCORD_ALL: ${{ secrets.DISCORD_ALL }}
-  DISCORD_WEBHOOK_REFLECTION: ${{ secrets.DISCORD_WEBHOOK_REFLECTION }}
-  DISCORD_WEBHOOK_LETTER: ${{ secrets.DISCORD_WEBHOOK_LETTER }}
-  DISCORD_WEBHOOK_SYMBOL: ${{ secrets.DISCORD_WEBHOOK_SYMBOL }}
-  DISCORD_WEBHOOK_AURIC: ${{ secrets.DISCORD_WEBHOOK_AURIC }}
+# env:
+#   DISCORD_ALL: ${{ secrets.DISCORD_ALL }}
+#   DISCORD_WEBHOOK_REFLECTION: ${{ secrets.DISCORD_WEBHOOK_REFLECTION }}
+#   DISCORD_WEBHOOK_LETTER: ${{ secrets.DISCORD_WEBHOOK_LETTER }}
+#   DISCORD_WEBHOOK_SYMBOL: ${{ secrets.DISCORD_WEBHOOK_SYMBOL }}
+#   DISCORD_WEBHOOK_AURIC: ${{ secrets.DISCORD_WEBHOOK_AURIC }}
 
-jobs:
-  build:
-    runs-on: [self-hosted, partypooper]
-    name: Checkout code and build container
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+# jobs:
+#   build:
+#     runs-on: [self-hosted, partypooper]
+#     name: Checkout code and build container
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v3
 
-      - name: Build containers from Dockerfile and run tests
-        run: |
-          docker-compose -f docker-compose-prod.yaml build
+#       - name: Build containers from Dockerfile and run tests
+#         run: |
+#           docker-compose -f docker-compose-prod.yaml build
 
-  trivy-scan:
-    runs-on: [self-hosted, partypooper]
-    name: Scan container with trivy
-    needs: build
-    steps:
-      - uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: "tml-nft-bot:${{ github.sha }}"
-          format: "table"
-          exit-code: "1"
-          ignore-unfixed: true
-          vuln-type: "os,library"
-          severity: "CRITICAL,HIGH"
-          ignore-policy: ignore-vuln-policy.rego
-          cache-dir: /tmp/.cache
+#   trivy-scan:
+#     runs-on: [self-hosted, partypooper]
+#     name: Scan container with trivy
+#     needs: build
+#     steps:
+#       - uses: aquasecurity/trivy-action@master
+#         with:
+#           image-ref: "tml-nft-bot:${{ github.sha }}"
+#           format: "table"
+#           exit-code: "1"
+#           ignore-unfixed: true
+#           vuln-type: "os,library"
+#           severity: "CRITICAL,HIGH"
+#           ignore-policy: ignore-vuln-policy.rego
+#           cache-dir: /tmp/.cache
 
-      - name: Post status notification to Discord
-        uses: sarisia/actions-status-discord@v1
-        if: failure()
-        with:
-          title: "QueIT build and push"
-          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+#       - name: Post status notification to Discord
+#         uses: sarisia/actions-status-discord@v1
+#         if: failure()
+#         with:
+#           title: "QueIT build and push"
+#           webhook: ${{ secrets.DISCORD_WEBHOOK }}
 
-  env-files:
-    runs-on: [self-hosted, partypooper]
-    name: Create env files
-    needs: [trivy-scan]
-    steps:
-      - name: Create env file for front
-        run: |
-          touch .env
-          echo DISCORD_ALL=${{ secrets.DISCORD_ALL }} >> .env
-          echo DISCORD_WEBHOOK_REFLECTION=${{ secrets.DISCORD_WEBHOOK_REFLECTION }} >> .env
-          echo DISCORD_WEBHOOK_LETTER=${{ secrets.DISCORD_WEBHOOK_LETTER }} >> .env
-          echo DISCORD_WEBHOOK_SYMBOL=${{ secrets.DISCORD_WEBHOOK_SYMBOL }} >> .env
-          echo DISCORD_WEBHOOK_AURIC=${{ secrets.DISCORD_WEBHOOK_AURIC }} >> .env
+#   env-files:
+#     runs-on: [self-hosted, partypooper]
+#     name: Create env files
+#     needs: [trivy-scan]
+#     steps:
+#       - name: Create env file for front
+#         run: |
+#           touch .env
+#           echo DISCORD_ALL=${{ secrets.DISCORD_ALL }} >> .env
+#           echo DISCORD_WEBHOOK_REFLECTION=${{ secrets.DISCORD_WEBHOOK_REFLECTION }} >> .env
+#           echo DISCORD_WEBHOOK_LETTER=${{ secrets.DISCORD_WEBHOOK_LETTER }} >> .env
+#           echo DISCORD_WEBHOOK_SYMBOL=${{ secrets.DISCORD_WEBHOOK_SYMBOL }} >> .env
+#           echo DISCORD_WEBHOOK_AURIC=${{ secrets.DISCORD_WEBHOOK_AURIC }} >> .env
 
-  deploy:
-    runs-on: [self-hosted, partypooper]
-    name: Deploy to swarm, cleanup and post notification
-    needs: env-files
-    steps:
-      - name: Deploy
-        env:
-          GITHUB_SHA: ${{ github.sha }}
-        run: docker-compose -f docker-compose-prod.yaml up -d
+#   deploy:
+#     runs-on: [self-hosted, partypooper]
+#     name: Deploy to swarm, cleanup and post notification
+#     needs: env-files
+#     steps:
+#       - name: Deploy
+#         env:
+#           GITHUB_SHA: ${{ github.sha }}
+#         run: docker-compose -f docker-compose-prod.yaml up -d
 
-      - name: Clean up
-        if: always()
-        run: |
-          rm -f .env
+#       - name: Clean up
+#         if: always()
+#         run: |
+#           rm -f .env
 
-      - name: Post status notification to Discord
-        uses: sarisia/actions-status-discord@v1
-        if: always()
-        with:
-          title: "QueIT build and push"
-          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+#       - name: Post status notification to Discord
+#         uses: sarisia/actions-status-discord@v1
+#         if: always()
+#         with:
+#           title: "QueIT build and push"
+#           webhook: ${{ secrets.DISCORD_WEBHOOK }}
