@@ -71,6 +71,7 @@ spec:
             mountPath: /statsd/statsd.conf
             subPath: statsd.conf
         command:
+          - "/bin/statsd_exporter"
           - "--statsd.mapping-config=/statsd/statsd.conf"
       volumes:
         - name: statsd-config
