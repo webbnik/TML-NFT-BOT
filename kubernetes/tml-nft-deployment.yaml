@@ -33,6 +33,9 @@ spec:
           timeoutSeconds: 3
           periodSeconds: 10
           failureThreshold: 5
+        envFrom:
+          - secretRef:
+              name: tml-nft-secrets
         resources: {}
       imagePullSecrets:
       - name: regcred
