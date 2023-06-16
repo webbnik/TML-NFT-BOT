@@ -21,6 +21,7 @@ services:
     networks:
       - tml_network
     environment:
+      FLASK_ENV: "development"
       PYTHONUNBUFFERED: 1
 
   statsd-exporter:

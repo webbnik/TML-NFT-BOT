@@ -22,7 +22,9 @@ scheduler = BackgroundScheduler(jobstores=jobstores)
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///nft.db"
 db = SQLAlchemy()
-load_dotenv()
+
+if os.getenv("FLASK_ENV") == "development":
+    load_dotenv()
 
 db.init_app(app)
 migrate = Migrate(app, db)

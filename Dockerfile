@@ -1,5 +1,7 @@
 FROM python:slim-buster
 
+RUN apt update && apt install -y nano sqlite3
+
 RUN groupadd --gid 5005 pythongroup
 RUN useradd --uid 5060 --gid pythongroup --home /app pythonuser
 
