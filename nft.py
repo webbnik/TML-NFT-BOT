@@ -94,23 +94,17 @@ def fetch_magiceden():
 
         discord_all = os.getenv("DISCORD_ALL")
         for symbol_info in symbols:
-            # print(f"Fetching Magic Eden at {datetime.now()} - {symbol_info['symbol']}")
             symbol = symbol_info["symbol"]
             url = f"https://api-mainnet.magiceden.dev/v2/collections/{symbol}/stats"
             headers = {"accept": "application/json"}
             response = requests.get(url, headers=headers)
-            # Add data to database
             data = response.json()
-            # Add data to database, if symbol already exists, update the data
             nft = NFT.query.filter_by(symbol=data["symbol"]).first()
             if nft:
-                # If floor price has increased, send message to Discord
-                upordown = "unchanged"
-                upordowngraphic = ""
+                upordown, upordowngraphic = "", ""
                 if nft.floorPrice < data["floorPrice"]:
                     upordown = "increased"
                     upordowngraphic = "https://nft.hardy.se/static/img/increase.png"
-                # If floor price has decreased, send message to Discord
                 elif nft.floorPrice > data["floorPrice"]:
                     upordown = "decreased"
                     upordowngraphic = "https://nft.hardy.se/static/img/decrease.png"
@@ -197,21 +191,21 @@ def fetchbinance():
         # with lock:
         # symbols = ["SOLUSDT", "SOLEUR"]
         symbols = [
-        {
-            "symbol": "SOLUSDT",
-            "name": "USDT",
-            "sign": "$"
-        },
-        {
-            "symbol": "SOLEUR",
-            "name": "Euro",
-            "sign": "€"
-        },
-        {  "symbol": "SOLGBP",
-            "name": "GBP",
-            "sign": "£"
-        }
-    ]
+                    {
+                        "symbol": "SOLUSDT",
+                        "name": "USDT",
+                        "sign": "$"
+                    },
+                    {
+                        "symbol": "SOLEUR",
+                        "name": "Euro",
+                        "sign": "€"
+                    },
+                    {  "symbol": "SOLGBP",
+                        "name": "GBP",
+                        "sign": "£"
+                    }
+                ]
         for symbol_info in symbols:
             # print(f"Fetching Binance at {datetime.now()} - {symbol_info['symbol']}")
             symbol = symbol_info["symbol"]
@@ -239,8 +233,8 @@ def index():
     nfts = NFT.query.all()
     currency = CRYPTO.query.filter_by(symbol=currency).first()
     currencies = CRYPTO.query.all()
-    # eur = CRYPTO.query.filter_by(symbol="SOLEUR").first()
-    # Sum total floor price
+
+    # Calculate total floor price
     total_floor_price = 0
     for nft in nfts:
         if nft.order != 0:
