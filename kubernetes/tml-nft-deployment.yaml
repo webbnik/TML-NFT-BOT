@@ -22,9 +22,9 @@ spec:
         app: tml-nft-bot
     spec:
       containers:
-      - image: registry.1webhost.xyz/tml-nft-bot
+      - image: registry.1webhost.xyz/tml-nft-bot:latest
         imagePullPolicy: Always
-        name: tml-nft-bot:latest
+        name: tml-nft-bot
         readinessProbe:
           httpGet:
             path: /readiness
@@ -41,3 +41,66 @@ spec:
       - name: regcred
 
 status: {}
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: statsd-exporter
+  name: statsd-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: statsd-exporter
+  template:
+    metadata:
+      labels:
+        app: statsd-exporter
+    spec:
+      containers:
+      - image: prom/statsd-exporter:v0.22.4
+        name: statsd-exporter
+        ports:
+          - containerPort: 9102
+        volumeMounts:
+          - name: statsd-config
+            mountPath: /statsd/statsd.conf
+            subPath: statsd.conf
+        command:
+          - "--statsd.mapping-config=/statsd/statsd.conf"
+      volumes:
+        - name: statsd-config
+          configMap:
+            name: statsd-config
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: statsd-config
+data:
+  statsd.conf: |
+    mappings:
+      - match: "*.gunicorn.request.status.*"
+        help: "gunicorn response code"
+        name: "gunicorn_response_code"
+        labels:
+          app: "$1"
+          status: "$2"
+      - match: "*.gunicorn.workers"
+        name: "gunicorn_workers"
+        labels:
+          app: "$1"
+      - match: "*.gunicorn.requests"
+        name: "gunicorn_requests"
+        labels:
+          app: "$1"
+      - match: "*.gunicorn.request.duration"
+        name: "gunicorn_request_duration"
+        labels:
+          app: "$1"

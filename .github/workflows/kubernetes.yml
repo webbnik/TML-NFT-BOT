@@ -38,6 +38,9 @@ jobs:
     name: Restart containers
     needs: push
     steps:
+      - name: Aplly manifests
+        run: |
+          kubectl apply -f kubernetes/.
       - name: Set image
         run: |
           kubectl set image deployment/tml-nft-bot tml-nft-bot=registry.1webhost.xyz/tml-nft-bot:${GITHUB_SHA}
