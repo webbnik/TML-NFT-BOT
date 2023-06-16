@@ -17,7 +17,7 @@ jobs:
           docker-compose -f docker-compose-prod.yaml build
       - name: Tag image with latest
         run: |
-          docker image tag registry.1webhost.xyz/tml-nft-bot:${GITHUB_SHA} tml-nft-bot:latest
+          docker image tag tml-nft-bot:${GITHUB_SHA} registry.1webhost.xyz/tml-nft-bot:${GITHUB_SHA}
 
   push:
     runs-on: [self-hosted, console]
