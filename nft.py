@@ -247,6 +247,16 @@ def handle_undefined_error(e):
     # Logic to handle the error and display a custom error page
     return render_template('error.html', error_message=str(e)), 500
 
+# Kubernetes readiness probe
+@app.route('/readiness')
+def healthz():
+  # Check if the database contains any nfts and crypto
+    nfts = NFT.query.all()
+    crypto = CRYPTO.query.all()
+    if nfts and crypto:
+        return "<h1><center>Readiness check completed</center><h1>", 200
+    else:
+        return "<h1><center>Readiness check failed</center><h1>", 500
 
 scheduler.add_job(fetch_magiceden, 'interval', seconds=20, id="magiceden", replace_existing=True, next_run_time=datetime.now().replace(second=0, microsecond=0) + timedelta(minutes=1))
 scheduler.add_job(fetchbinance, 'interval', seconds=20, id="binance", replace_existing=True, next_run_time=datetime.now().replace(second=10, microsecond=0) + timedelta(minutes=1))
