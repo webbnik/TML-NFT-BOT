@@ -24,7 +24,7 @@ spec:
       containers:
       - image: registry.1webhost.xyz/tml-nft-bot
         imagePullPolicy: Always
-        name: tml-nft-bot
+        name: tml-nft-bot:latest
         readinessProbe:
           httpGet:
             path: /readiness

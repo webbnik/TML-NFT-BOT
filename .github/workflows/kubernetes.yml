@@ -14,10 +14,10 @@ jobs:
         uses: actions/checkout@v3
       - name: Build container from Dockerfile
         run: |
-          docker-compose -f docker-compose-prod.yaml build
-      - name: Tag image
-        run: |
-          docker image tag tml-nft-bot:${GITHUB_SHA} registry.1webhost.xyz/tml-nft-bot:${GITHUB_SHA}
+          docker build . -t registry.1webhost.xyz/tml-nft-bot:${GITHUB_SHA} -t registry.1webhost.xyz/tml-nft-bot:latest
+      # - name: Tag image
+      #   run: |
+      #     docker image tag tml-nft-bot:${GITHUB_SHA} registry.1webhost.xyz/tml-nft-bot:${GITHUB_SHA} registry.1webhost.xyz/tml-nft-bot:latest
 
   push:
     runs-on: [self-hosted, console]
