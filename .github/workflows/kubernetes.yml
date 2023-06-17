@@ -21,12 +21,10 @@ jobs:
     name: Push all images to image repository
     needs: build
     steps:
-      - name: Push image unique tag
+      - name: Push image
         run: |
           docker image push registry.1webhost.xyz/tml-nft-bot:${GITHUB_SHA}
-      - name: Push image latest tag
-        run: |
-          docker image push registry.1webhost.xyz/tml-nft-bot:latest
+          docker image push registry.1webhost.xyz/tml-nft-bot:latest          
       - uses: sarisia/actions-status-discord@v1
         if: always()
         with:
@@ -47,6 +45,7 @@ jobs:
       - name: Restart containers
         run: |
           kubectl rollout restart deploy tml-nft-bot
+          kubectl rollout restart deploy statsd-exporter
       - uses: sarisia/actions-status-discord@v1
         if: always()
         with:

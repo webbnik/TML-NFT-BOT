@@ -30,9 +30,9 @@
                 <h6>#{{ nft.order }}</h6>
             </div>
             <div class="card-body nft-image" style="background-image: url('{{ nft.image }}');">
-                <p class="card-text">Floor: <b>{{ '%.2f' | format(nft.floorPrice / 1000000000) }} SOL</b> ({{ '%.2f' | format(nft.floorPrice / 1000000000 * currency.price) }}{{ currency.sign }})</p>
+                <p class="card-text">Floor: <b>{{ '%.3f' | format(nft.floorPrice / 1000000000) }} SOL</b> ({{ '%.2f' | format(nft.floorPrice / 1000000000 * currency.price) }}{{ currency.sign }})</p>
                 <p class="card-text">Listed: {{ nft.listedCount }} pcs</p>
-                <p class="card-text">Average 24h: {{ '%.2f' | format(nft.avgPrice24hr / 1000000000) }} SOL</p>
+                <p class="card-text">Average 24h: {{ '%.3f' | format(nft.avgPrice24hr / 1000000000) }} SOL</p>
 
                 <div class="calculator-fields">
                     <input type="number" class="nft-quantity" data-floor-price="{{ nft.floorPrice }}" data-currency-price="{{ currency.price }}" value="0">
@@ -46,7 +46,7 @@
     <div class="col-lg-4 col-md-12 col-sm-12 card-container floorprice">
         <div class="card">
             <div class="card-body">
-                <p class="card-text totalFloor">Total: <b>{{ '%.2f' | format(total_floor_price / 1000000000) }} SOL</b> (<span>{{ '%.2f' | format(total_floor_price / 1000000000 * currency.price) }}</span>{{ currency.sign }})
+                <p class="card-text totalFloor">Total: <b>{{ '%.3f' | format(total_floor_price / 1000000000) }} SOL</b> (<span>{{ '%.3f' | format(total_floor_price / 1000000000 * currency.price) }}</span>{{ currency.sign }})
                     <br><span class="date">{{ nftfetched.fetched.strftime('%d-%m-%Y %H:%M:%S') }} UTC</span>
                 </p>
 
@@ -54,7 +54,7 @@
                     <br><span class="date">{{ nftfetched.fetched.strftime('%d-%m-%Y %H:%M:%S') }} UTC</span>
                 </p>
 
-                <p class="card-text">1 SOL = <b>{{ '%.2f' | format(currency.price) }}{{ currency.sign }}</b>
+                <p class="card-text">1 SOL = <b>{{ '%.3f' | format(currency.price) }}{{ currency.sign }}</b>
                     <br><span class="date">{{ currency.fetched.strftime('%d-%m-%Y %H:%M:%S') }} UTC</span>
                 </p>
 
@@ -99,9 +99,9 @@
                     <h6>#{{ nft.order }}</h6>
                 </div>
                 <div class="card-body nft-image" style="background-image: url('{{ nft.image }}');">
-                    <p class="card-text">Floor: <b>{{ '%.2f' | format(nft.floorPrice / 1000000000) }} SOL</b> ({{ '%.2f' | format(nft.floorPrice / 1000000000 * currency.price) }}{{ currency.sign }})</p>
+                    <p class="card-text">Floor: <b>{{ '%.3f' | format(nft.floorPrice / 1000000000) }} SOL</b> ({{ '%.2f' | format(nft.floorPrice / 1000000000 * currency.price) }}{{ currency.sign }})</p>
                     <p class="card-text">Listed: {{ nft.listedCount }} pcs</p>
-                    <p class="card-text">Average 24h: {{ '%.2f' | format(nft.avgPrice24hr / 1000000000) }} SOL</p>
+                    <p class="card-text">Average 24h: {{ '%.3f' | format(nft.avgPrice24hr / 1000000000) }} SOL</p>
 
                     <!-- Calculator fields for each NFT -->
                     <div class="calculator-fields">
@@ -114,9 +114,13 @@
         {% endfor %}
     </div>
     <div class="col-lg-4 col-md-12 col-sm-12 card-container contact">
+        <b>Feedback or contact?</b></br>
         <a href="https://discord.gg/WGYaCcApvQ" class="contact" target="_blank">
-            Feedback or contact? Join our Discord:
-            <i class="fa-brands fa-discord" alt="Feedback and NFT-bot"></i></a>
+            Discord <i class="fa-brands fa-discord" alt="Feedback and NFT-bot"></i>
+        </a> -
+        <a href="https://github.com/webbnik/TML-NFT-BOT" class="contact" target="_blank">
+            GitHub <i class="fa-brands fa-github" alt="Github"></i>
+        </a>
     </div>
 
     <script src="{{ url_for('static', filename='js/calculate_fields.js') }}"></script>

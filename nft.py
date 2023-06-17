@@ -56,43 +56,43 @@ class CRYPTO(db.Model):
 def fetch_magiceden():
     with app.app_context():
         symbols = [
-                {
-                    "symbol": "tomorrowland_winter",
-                    "name": "A letter from the Universe (Winter)",
-                    "order": 1,
-                    "image": "https://pbs.twimg.com/media/FZar7ZcUsAAw0wa.jpg",
-                    "url": "https://magiceden.io/marketplace/tomorrowland_winter",
-                    "color": 7608595,
-                    "webhook": os.getenv("DISCORD_WEBHOOK_LETTER")
-                },
-                {
-                    "symbol": "the_reflection_of_love",
-                    "name": "The reflection of Love",
-                    "order": 2,
-                    "image": "https://moon.ly/uploads/nft/e8141974-650f-4c59-80b0-3bb9397ae049.gif",
-                    "url": "https://magiceden.io/marketplace/the_reflection_of_love",
-                    "color": 1274905,
-                    "webhook": os.getenv("DISCORD_WEBHOOK_REFLECTION")
-                },
-                {
-                    "symbol": "tomorrowland_love_unity",
-                    "name": "The Symbol of Love and Unity",
-                    "order": 3,
-                    "image": "https://img-cdn.magiceden.dev/rs:fill:400:400:0:0/plain/https://bafybeidzsht5g3rtb2crlgildg3hrbt5mtuiw6eiakxj5ckhftvrqyjvbm.ipfs.nftstorage.link/",
-                    "url": "https://magiceden.io/marketplace/tomorrowland_love_unity",
-                    "color": 1643380,
-                    "webhook": os.getenv("DISCORD_WEBHOOK_SYMBOL")
-                },
-                {
-                    "symbol": "the_golden_auric",
-                    "name": "The Golden Auric",
-                    "order": 0,
-                    "image": "https://img-cdn.magiceden.dev/rs:fill:400:400:0:0/plain/https://creator-hub-prod.s3.us-east-2.amazonaws.com/the_golden_auric_pfp_1682607788127.png",
-                    "url": "https://magiceden.io/marketplace/the_golden_auric",
-                    "color": 16777215,
-                    "webhook": os.getenv("DISCORD_WEBHOOK_AURIC")
-                }
-            ]
+        {
+            "symbol": "tomorrowland_winter",
+            "name": "A letter from the Universe (Winter)",
+            "order": 1,
+            "image": "https://pbs.twimg.com/media/FZar7ZcUsAAw0wa.jpg",
+            "url": "https://magiceden.io/marketplace/tomorrowland_winter",
+            "color": 7608595,
+            "webhook": os.getenv("DISCORD_WEBHOOK_LETTER")
+        },
+        {
+            "symbol": "the_reflection_of_love",
+            "name": "The reflection of Love",
+            "order": 2,
+            "image": "https://moon.ly/uploads/nft/e8141974-650f-4c59-80b0-3bb9397ae049.gif",
+            "url": "https://magiceden.io/marketplace/the_reflection_of_love",
+            "color": 1274905,
+            "webhook": os.getenv("DISCORD_WEBHOOK_REFLECTION")
+        },
+        {
+            "symbol": "tomorrowland_love_unity",
+            "name": "The Symbol of Love and Unity",
+            "order": 3,
+            "image": "https://img-cdn.magiceden.dev/rs:fill:400:400:0:0/plain/https://bafybeidzsht5g3rtb2crlgildg3hrbt5mtuiw6eiakxj5ckhftvrqyjvbm.ipfs.nftstorage.link/",
+            "url": "https://magiceden.io/marketplace/tomorrowland_love_unity",
+            "color": 1643380,
+            "webhook": os.getenv("DISCORD_WEBHOOK_SYMBOL")
+        },
+        {
+            "symbol": "the_golden_auric",
+            "name": "The Golden Auric",
+            "order": 0,
+            "image": "https://img-cdn.magiceden.dev/rs:fill:400:400:0:0/plain/https://creator-hub-prod.s3.us-east-2.amazonaws.com/the_golden_auric_pfp_1682607788127.png",
+            "url": "https://magiceden.io/marketplace/the_golden_auric",
+            "color": 16777215,
+            "webhook": os.getenv("DISCORD_WEBHOOK_AURIC")
+        }
+        ]
 
         discord_all = os.getenv("DISCORD_ALL")
         for symbol_info in symbols:
@@ -190,24 +190,22 @@ def fetch_magiceden():
 
 def fetchbinance():
     with app.app_context():
-        # with lock:
-        # symbols = ["SOLUSDT", "SOLEUR"]
         symbols = [
-                    {
-                        "symbol": "SOLUSDT",
-                        "name": "USDT",
-                        "sign": "$"
-                    },
-                    {
-                        "symbol": "SOLEUR",
-                        "name": "Euro",
-                        "sign": "€"
-                    },
-                    {  "symbol": "SOLGBP",
-                        "name": "GBP",
-                        "sign": "£"
-                    }
-                ]
+        {
+            "symbol": "SOLUSDT",
+            "name": "USDT",
+            "sign": "$"
+        },
+        {
+            "symbol": "SOLEUR",
+            "name": "Euro",
+            "sign": "€"
+        },
+        {  "symbol": "SOLGBP",
+            "name": "GBP",
+            "sign": "£"
+        }
+        ]
         for symbol_info in symbols:
             # print(f"Fetching Binance at {datetime.now()} - {symbol_info['symbol']}")
             symbol = symbol_info["symbol"]
