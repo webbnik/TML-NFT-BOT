@@ -27,7 +27,7 @@ spec:
   selector:
     app: statsd-exporter
   ports:
-    - protocol: TCP
+    - protocol: UDP
       port: 9125
       targetPort: 9125
 
