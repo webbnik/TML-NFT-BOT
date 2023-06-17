@@ -15,22 +15,22 @@ jobs:
       - name: Build container from Dockerfile
         run: |
           docker build . -t registry.1webhost.xyz/tml-nft-bot:${GITHUB_SHA} -t registry.1webhost.xyz/tml-nft-bot:latest
-      # - name: Tag image
-      #   run: |
-      #     docker image tag tml-nft-bot:${GITHUB_SHA} registry.1webhost.xyz/tml-nft-bot:${GITHUB_SHA} registry.1webhost.xyz/tml-nft-bot:latest
 
   push:
     runs-on: [self-hosted, console]
     name: Push all images to image repository
     needs: build
     steps:
-      - name: Push image
+      - name: Push image unique tag
         run: |
           docker image push registry.1webhost.xyz/tml-nft-bot:${GITHUB_SHA}
+      - name: Push image latest tag
+        run: |
+          docker image push registry.1webhost.xyz/tml-nft-bot:latest
       - uses: sarisia/actions-status-discord@v1
         if: always()
         with:
-          title: "QueIT build and push"
+          title: "TML-NFT-BOT build and push"
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
   
   restart:
@@ -47,4 +47,9 @@ jobs:
       - name: Restart containers
         run: |
           kubectl rollout restart deploy tml-nft-bot
+      - uses: sarisia/actions-status-discord@v1
+        if: always()
+        with:
+          title: "TML-NFT-BOT restart"
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
 
