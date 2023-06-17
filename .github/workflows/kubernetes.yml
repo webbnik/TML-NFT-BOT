@@ -1,4 +1,4 @@
-name: Build TML-NFT-BOT
+name: Build TML-NFT-BOT Kubernetes
 
 on:
   push:

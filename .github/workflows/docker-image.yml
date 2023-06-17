@@ -1,5 +1,9 @@
+name: Build TML-NFT-BOT Docker
+
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - docker
 
 env:
   DISCORD_ALL: ${{ secrets.DISCORD_ALL }}
