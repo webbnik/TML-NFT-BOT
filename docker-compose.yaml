@@ -17,7 +17,7 @@ services:
         flask db init || true
         flask db migrate
         flask db upgrade
-        gunicorn -b 0.0.0.0:8000 --statsd-host=statsd-exporter:9125 --statsd-prefix=tml_nft_bot -w 2 --timeout 10 --reload --preload nft:app
+        gunicorn -b 0.0.0.0:8000 --statsd-host=statsd-exporter:9125 --statsd-prefix=tml_nft_bot -w 2 --timeout 10 --reload --preload app:app
     networks:
       - tml_network
     environment:
