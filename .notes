@@ -1,1 +1,5 @@
-sqlite3 instance/nft.db "UPDATE nft SET floorPrice = 7090000000 WHERE symbol = 'ghost_kid_dao';"
+-- SQLite
+-- set floorPrice to 2 for symbol ghost_kid_dao
+UPDATE nft SET floorPrice = 7090000000 WHERE symbol = 'ghost_kid_dao';
+
+-- sqlite3 instance/nft.db "UPDATE nft SET floorPrice = 7090000000 WHERE symbol = 'ghost_kid_dao';"

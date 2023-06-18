@@ -5,7 +5,7 @@ function toggleNFTCards(event) {
     // Toggle the visibility of the NFT cards container
     nftCardsContainer.style.display = nftCardsContainer.style.display === 'none' ? 'block' : 'none';
     // Update the link text based on the visibility state
-    event.target.textContent = nftCardsContainer.style.display === 'none' ? 'Collectibles' : 'Hide Collectibles';
+    event.target.textContent = nftCardsContainer.style.display === 'none' ? 'Show collectibles' : 'Hide Collectibles';
 }
 
 function toggleCalculator() {
@@ -18,6 +18,9 @@ function toggleCalculator() {
     const calculatedFloor = document.querySelector('.calculatedFloor');
     totalFloor.style.display = totalFloor.style.display === 'none' ? 'block' : 'none';
     calculatedFloor.style.display = calculatedFloor.style.display === 'none' ? 'block' : 'none';
+    // Update the link text based on the visibility state
+    const toggleCalculatorLink = document.getElementById('toggle-calculator');
+    toggleCalculatorLink.textContent = totalFloor.style.display === 'none' ? 'Hide calculator' : 'Show calculator';
 }
 
 function calculateTotal() {
