@@ -239,7 +239,7 @@ def index():
     # Calculate total floor price
     total_floor_price = 0
     for nft in nfts:
-        if nft.order != 0:
+        if nft.order != 0 and nft.order != 9999:
             total_floor_price += nft.floorPrice
     nftfetched = NFT.query.order_by(NFT.fetched.desc()).first()
     return render_template("nfts.html", currency=currency, currencies=currencies, nfts=nfts, total_floor_price=total_floor_price, nftfetched=nftfetched)
