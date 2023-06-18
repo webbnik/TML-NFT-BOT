@@ -152,8 +152,6 @@ def fetch_magiceden():
                 # Send message to Discord if there is a change in floor price
                 if nft.floorPrice != data["floorPrice"]:
                     for webhook in symbol_info["webhook"]:
-                        # Print payload in json format
-                        print(json.dumps(payload, indent=4))
                         requests.post(webhook, json=payload)
                 nft.name = symbol_info["name"]
                 nft.order = symbol_info["order"]
