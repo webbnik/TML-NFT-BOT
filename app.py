@@ -39,6 +39,7 @@ class NFT(db.Model):
     listedCount = db.Column(db.Integer, nullable=False)
     avgPrice24hr = db.Column(db.Integer, nullable=False)
     volumeAll = db.Column(db.Integer, nullable=False)
+    include_in_total = db.Column(db.Boolean, nullable=False, default=True)
     fetched = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
 class CRYPTO(db.Model):
@@ -59,7 +60,8 @@ def fetch_magiceden():
             "image": "https://pbs.twimg.com/media/FZar7ZcUsAAw0wa.jpg",
             "url": "https://magiceden.io/marketplace/tomorrowland_winter",
             "color": 7608595,
-            "webhook": [os.getenv("DISCORD_WEBHOOK_LETTER"), os.getenv("DISCORD_ALL")]
+            "webhook": [os.getenv("DISCORD_WEBHOOK_LETTER"), os.getenv("DISCORD_ALL")],
+            "include_in_total": True
         },
         {
             "symbol": "the_reflection_of_love",
@@ -68,7 +70,8 @@ def fetch_magiceden():
             "image": "https://moon.ly/uploads/nft/e8141974-650f-4c59-80b0-3bb9397ae049.gif",
             "url": "https://magiceden.io/marketplace/the_reflection_of_love",
             "color": 1274905,
-            "webhook": [os.getenv("DISCORD_WEBHOOK_REFLECTION"), os.getenv("DISCORD_ALL")]
+            "webhook": [os.getenv("DISCORD_WEBHOOK_REFLECTION"), os.getenv("DISCORD_ALL")],
+            "include_in_total": True
         },
         {
             "symbol": "tomorrowland_love_unity",
@@ -77,7 +80,8 @@ def fetch_magiceden():
             "image": "https://img-cdn.magiceden.dev/rs:fill:400:400:0:0/plain/https://bafybeidzsht5g3rtb2crlgildg3hrbt5mtuiw6eiakxj5ckhftvrqyjvbm.ipfs.nftstorage.link/",
             "url": "https://magiceden.io/marketplace/tomorrowland_love_unity",
             "color": 1643380,
-            "webhook": [os.getenv("DISCORD_WEBHOOK_SYMBOL"), os.getenv("DISCORD_ALL")]
+            "webhook": [os.getenv("DISCORD_WEBHOOK_SYMBOL"), os.getenv("DISCORD_ALL")],
+            "include_in_total": True
         },
         {
             "symbol": "the_golden_auric",
@@ -86,7 +90,8 @@ def fetch_magiceden():
             "image": "https://img-cdn.magiceden.dev/rs:fill:400:400:0:0/plain/https://creator-hub-prod.s3.us-east-2.amazonaws.com/the_golden_auric_pfp_1682607788127.png",
             "url": "https://magiceden.io/marketplace/the_golden_auric",
             "color": 16777215,
-            "webhook": [os.getenv("DISCORD_WEBHOOK_AURIC"), os.getenv("DISCORD_ALL")]
+            "webhook": [os.getenv("DISCORD_WEBHOOK_AURIC"), os.getenv("DISCORD_ALL")],
+            "include_in_total": False
         },
         {
             "symbol": "ghost_kid_dao",
@@ -95,79 +100,19 @@ def fetch_magiceden():
             "image": "https://img-cdn.magiceden.dev/rs:fill:400:400:0:0/plain/https://creator-hub-prod.s3.us-east-2.amazonaws.com/ghost_kid_dao_pfp_1662325189064.gif",
             "url": "https://magiceden.io/marketplace/ghost_kid_dao",
             "color": 16777215,
-            "webhook": [os.getenv("DISCORD_WEBHOOK_GHOST")]
+            "webhook": [os.getenv("DISCORD_WEBHOOK_GHOST")],
+            "include_in_total": False
         }
         ]
 
         for symbol_info in symbols:
             symbol = symbol_info["symbol"]
             url = f"https://api-mainnet.magiceden.dev/v2/collections/{symbol}/stats"
-            headers = {"accept": "application/json"}
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers={"accept": "application/json"})
             data = response.json()
             nft = NFT.query.filter_by(symbol=data["symbol"]).first()
-            if nft:
-                upordown, upordowngraphic = "", ""
-                if nft.floorPrice < data["floorPrice"]:
-                    upordown = "increased"
-                    upordowngraphic = "https://nft.hardy.se/static/img/increase.png"
-                elif nft.floorPrice > data["floorPrice"]:
-                    upordown = "decreased"
-                    upordowngraphic = "https://nft.hardy.se/static/img/decrease.png"
-                payload = {
-                    "username": "NFT",
-                    "avatar_url": "https://i.imgur.com/4M34hi2.png",
-                    "embeds": [
-                        {
-                            "title": f"{symbol_info['name']}",
-                            "url": f"{symbol_info['url']}",
-                            "description": f"Has {upordown} from {nft.floorPrice / 1000000000} SOL to {data['floorPrice'] / 1000000000} SOL",
-                            "color": symbol_info["color"],
-                            "author": {
-                            "name": "nft.hardy.se",
-                            "url": "https://nft.hardy.se/"
-                            },
-                            "fields": [
-                                {
-                                    "name": "Old floor Price",
-                                    "value": f"{nft.floorPrice / 1000000000} SOL",
-                                    "inline": True
-                                },
-                                {
-                                    "name": "New floor Price",
-                                    "value": f"{data['floorPrice'] / 1000000000} SOL",
-                                    "inline": True
-                                }
-                            ],
-                            "thumbnail": {
-                                "url": f"{symbol_info['image']}"
-                            },
-                            "footer": {
-                                "text": f"Floor price has {upordown}",
-                                "icon_url": f"{upordowngraphic}"
-                            }
-                        }
-                    ]
-                }
-                # Send message to Discord if there is a change in floor price
-                if nft.floorPrice != data["floorPrice"]:
-                    for webhook in symbol_info["webhook"]:
-                        requests.post(webhook, json=payload)
-                nft.name = symbol_info["name"]
-                nft.order = symbol_info["order"]
-                nft.image = symbol_info["image"]
-                nft.url = symbol_info["url"]
-                nft.color = symbol_info["color"]
-                nft.floorPrice = data["floorPrice"]
-                nft.listedCount = data["listedCount"]
-                try:
-                    nft.avgPrice24hr = data["avgPrice24hr"]
-                except:
-                    nft.avgPrice24hr = 0
-                nft.volumeAll = data["volumeAll"]
-                nft.fetched = datetime.utcnow()
-                db.session.commit()
-            else:
+            if not nft:
+                # Add the NFT to the database if it doesn't exist
                 try:
                     avgPrice24hr = data["avgPrice24hr"]
                 except:
@@ -183,16 +128,89 @@ def fetch_magiceden():
                     listedCount=data["listedCount"],
                     avgPrice24hr=data["avgPrice24hr"],
                     volumeAll=data["volumeAll"],
+                    include_in_total=symbol_info["include_in_total"],
                     fetched=datetime.utcnow()
-                )
+                    )
                 db.session.add(nft)
                 db.session.commit()
+
+            # If NFT exists
+            else:
+                # If floor price has changed
+                upordown = "increased" if nft.floorPrice < data["floorPrice"] else "decreased"
+                upordowngraphic = "https://nft.hardy.se/static/img/increase.png" if upordown == "increased" else "https://nft.hardy.se/static/img/decrease.png"
+                payload = {
+                    "username": "NFT",
+                    "avatar_url": "https://i.imgur.com/4M34hi2.png",
+                    "embeds": [
+                        {
+                            "title": f"{nft.name}",
+                            "url": f"{nft.url}",
+                            "description": f"Has {upordown} from {nft.floorPrice / 1000000000} SOL to {data['floorPrice'] / 1000000000} SOL",
+                            "color": nft.color,
+                            "author": {
+                            "name": "nft.hardy.se",
+                            "url": "https://nft.hardy.se/"
+                            },
+                            "fields": [
+                                {
+                                    "name": "Old floor Price",
+                                    "value": f"{nft.floorPrice / 1000000000} SOL",
+                                    "inline": True
+                                },
+                                {
+                                    "name": "New floor Price",
+                                    "value": f"{data['floorPrice'] / 1000000000} SOL",
+                                    "inline": True
+                                },
+                                {
+                                    "name": "Listed",
+                                    "value": f"{data['listedCount']}",
+                                    "inline": True
+                                },
+                            ],
+                            "thumbnail": {
+                                "url": f"{nft.image}"
+                            },
+                            "footer": {
+                                "text": f"Floor price has {upordown}",
+                                "icon_url": f"{upordowngraphic}"
+                            }
+                        }
+                    ]
+                }
+
+                # Send message to Discord if there is a change in floor price
+                if nft.floorPrice != data["floorPrice"]:
+                    for webhook in symbol_info["webhook"]:
+                        requests.post(webhook, json=payload)
+
+                # Update the NFT in the database
+                nft_attributes = {
+                    "name": symbol_info.get("name"),
+                    "order": symbol_info.get("order"),
+                    "image": symbol_info.get("image"),
+                    "url": symbol_info.get("url"),
+                    "color": symbol_info.get("color"),
+                    "floorPrice": data.get("floorPrice"),
+                    "listedCount": data.get("listedCount"),
+                    "avgPrice24hr": data.get("avgPrice24hr", 0),
+                    "volumeAll": data.get("volumeAll"),
+                    "include_in_total": symbol_info.get("include_in_total"),
+                    "fetched": datetime.utcnow()
+                }
+
+                for attr, value in nft_attributes.items():
+                    setattr(nft, attr, value)
+
+                db.session.commit()
+            # Avoid hitting the rate limit of 2 qps
             time.sleep(1)
 
 
 def fetchbinance():
     with app.app_context():
-        symbols = [
+        currencies = [
         {
             "symbol": "SOLUSDT",
             "name": "USDT",
@@ -208,24 +226,35 @@ def fetchbinance():
             "sign": "£"
         }
         ]
-        for symbol_info in symbols:
-            # print(f"Fetching Binance at {datetime.now()} - {symbol_info['symbol']}")
-            symbol = symbol_info["symbol"]
-            url = f"https://api.binance.com/api/v3/ticker/price?symbol={symbol}"
+        for currency in currencies:
+            url = f"https://api.binance.com/api/v3/ticker/price?symbol={currency['symbol']}"
             headers = {"accept": "application/json"}
             response = requests.get(url, headers=headers)
             data = response.json()
-            crypto = CRYPTO.query.filter_by(symbol=symbol_info["symbol"]).first()
-            # Add data to database, if symbol already exists, update the data
-            if crypto:
-                crypto.price = data["price"]
-                crypto.name = symbol_info["name"]
-                crypto.sign = symbol_info["sign"]
-                crypto.fetched = datetime.utcnow()
-                db.session.commit()
-            else:
-                crypto = CRYPTO(symbol=symbol_info["symbol"], price=data["price"], name=symbol_info["name"], sign=symbol_info["sign"], fetched=datetime.utcnow())
+            crypto = CRYPTO.query.filter_by(symbol=currency["symbol"]).first()
+            # Add data to database if it doesn't exist
+            if not crypto:
+                crypto = CRYPTO(
+                    symbol=currency["symbol"],
+                    price=data["price"],
+                    name=currency["name"],
+                    sign=currency["sign"],
+                    fetched=datetime.utcnow()
+                    )
                 db.session.add(crypto)
+                db.session.commit()
+            # Update data if it exists
+            else:
+                crypto_attributes = {
+                    "price": data.get("price"),
+                    "name": currency.get("name"),
+                    "sign": currency.get("sign"),
+                    "fetched": datetime.utcnow()
+                }
+
+                for attr, value in crypto_attributes.items():
+                    setattr(crypto, attr, value)
+
                 db.session.commit()
 
 
@@ -239,7 +268,8 @@ def index():
     # Calculate total floor price
     total_floor_price = 0
     for nft in nfts:
-        if nft.order != 0 and nft.order != 9999:
+        # Only include nfts that has True in include_in_total
+        if nft.include_in_total:
             total_floor_price += nft.floorPrice
     nftfetched = NFT.query.order_by(NFT.fetched.desc()).first()
     return render_template("nfts.html", currency=currency, currencies=currencies, nfts=nfts, total_floor_price=total_floor_price, nftfetched=nftfetched)
