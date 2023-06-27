@@ -156,50 +156,55 @@ def fetch_magiceden():
             response = requests.get(url, headers={"accept": "application/json"})
             data = response.json()
             nft = NFT.query.filter_by(symbol=data["symbol"]).first()
-            # Add data to database if it doesn't exist
-            if not nft:
-                nft = NFT(
-                    symbol=data.get("symbol"),
-                    name=symbol.get("name"),
-                    order=symbol.get("order"),
-                    image=symbol.get("image"),
-                    url=symbol.get("url"),
-                    color=symbol.get("color"),
-                    floorPrice=data.get("floorPrice"),
-                    listedCount=data.get("listedCount"),
-                    avgPrice24hr=data.get("avgPrice24hr", 0),
-                    volumeAll=data.get("volumeAll"),
-                    include_in_total=symbol.get("include_in_total"),
-                    fetched=datetime.utcnow()
-                )
-                db.session.add(nft)
-                db.session.commit()
-
-            # If NFT exists
+            print(f"Fetching ME at {datetime.now()} - Floorprice: {data.get('floorPrice')} ({data.get('floorPrice') / 1000000000}) - {symbol['symbol']}")
+            # Bug in MagicEden giving floorPrices below 999, so we ignore those
+            if data.get("floorPrice") < 999:
+                print("Floorprice below 999, ignoring")
             else:
-                # Send message to Discord if there is a change in floor price
-                if nft.floorPrice != data["floorPrice"]:
-                    discord_webhook(nft, data["floorPrice"], data["listedCount"], symbol["webhook"])
+                # Add data to database if it doesn't exist
+                if not nft:
+                    nft = NFT(
+                        symbol=data.get("symbol"),
+                        name=symbol.get("name"),
+                        order=symbol.get("order"),
+                        image=symbol.get("image"),
+                        url=symbol.get("url"),
+                        color=symbol.get("color"),
+                        floorPrice=data.get("floorPrice"),
+                        listedCount=data.get("listedCount"),
+                        avgPrice24hr=data.get("avgPrice24hr", 0),
+                        volumeAll=data.get("volumeAll"),
+                        include_in_total=symbol.get("include_in_total"),
+                        fetched=datetime.utcnow()
+                    )
+                    db.session.add(nft)
+                    db.session.commit()
 
-                # Update the NFT in the database
-                nft_attributes = {
-                    "name": symbol.get("name"),
-                    "order": symbol.get("order"),
-                    "image": symbol.get("image"),
-                    "url": symbol.get("url"),
-                    "color": symbol.get("color"),
-                    "floorPrice": data.get("floorPrice"),
-                    "listedCount": data.get("listedCount"),
-                    "avgPrice24hr": data.get("avgPrice24hr", 0),
-                    "volumeAll": data.get("volumeAll"),
-                    "include_in_total": symbol.get("include_in_total"),
-                    "fetched": datetime.utcnow()
-                }
-                for attr, value in nft_attributes.items():
-                    setattr(nft, attr, value)
-                db.session.commit()
-            # Avoid hitting the rate limit of 2 qps
-            time.sleep(1)
+                # If NFT exists
+                else:
+                    # Send message to Discord if there is a change in floor price
+                    if nft.floorPrice != data["floorPrice"]:
+                        discord_webhook(nft, data["floorPrice"], data["listedCount"], symbol["webhook"])
+
+                    # Update the NFT in the database
+                    nft_attributes = {
+                        "name": symbol.get("name"),
+                        "order": symbol.get("order"),
+                        "image": symbol.get("image"),
+                        "url": symbol.get("url"),
+                        "color": symbol.get("color"),
+                        "floorPrice": data.get("floorPrice"),
+                        "listedCount": data.get("listedCount"),
+                        "avgPrice24hr": data.get("avgPrice24hr", 0),
+                        "volumeAll": data.get("volumeAll"),
+                        "include_in_total": symbol.get("include_in_total"),
+                        "fetched": datetime.utcnow()
+                    }
+                    for attr, value in nft_attributes.items():
+                        setattr(nft, attr, value)
+                    db.session.commit()
+                # Avoid hitting the rate limit of 2 qps
+                time.sleep(1)
 
 
 def fetch_binance():
