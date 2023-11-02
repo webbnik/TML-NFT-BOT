@@ -9,3 +9,4 @@ The bot also sends any floor updates to a discord server: https://discord.gg/WGY
 
 
 For any support or feedback, please open an Issue or contact me on Discord ^
+
