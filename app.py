@@ -152,7 +152,7 @@ def fetch_magiceden():
         ]
 
         for symbol in symbols:
-            url = f"https://api-mainnet.magiceden.dev/v2/collections/{symbol['symbol']}/stats"
+            url = f"https://api-mainnet.magiceden.dev/v2/collections/{symbol['symbol']}/stats?listingAggMode=true"
             response = requests.get(url, headers={"accept": "application/json"})
             data = response.json()
             nft = NFT.query.filter_by(symbol=data["symbol"]).first()
