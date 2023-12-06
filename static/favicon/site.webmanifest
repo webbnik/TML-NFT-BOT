@@ -1,6 +1,6 @@
 {
     "name": "Tomorrowland NFT Bot",
-    "short_name": "TML NFT BOT",
+    "short_name": "TML NFT Bot",
     "icons": [
         {
             "src": "/android-chrome-192x192.png",
@@ -13,5 +13,7 @@
             "type": "image/png"
         }
     ],
-    "display": "standalone"
+    "theme_color": "#212529",
+    "background_color": "black",
+    "display": "browser"
 }
