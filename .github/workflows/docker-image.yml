@@ -3,7 +3,7 @@ name: Build TML-NFT-BOT Docker
 on:
   push:
     branches:
-      - docker
+      - master
 
 env:
   DISCORD_ALL: ${{ secrets.DISCORD_ALL }}
