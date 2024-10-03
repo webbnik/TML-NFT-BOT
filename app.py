@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from flask_apscheduler import APScheduler
 from jinja2.exceptions import UndefinedError
 from flask_migrate import Migrate, upgrade, init
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -220,9 +220,14 @@ def fetch_binance():
                 "name": "Euro",
                 "sign": "€"
             },
-            {  "symbol": "SOLGBP",
-                "name": "GBP",
-                "sign": "£"
+            {  "symbol": "SOLETH",
+                "name": "Etherium",
+                "sign": "ETH"
+            },
+            {
+                "symbol": "SOLBTC",
+                "name": "Bitcoin",
+                "sign": "BTC"
             }
         ]
         for currency in currencies:
@@ -257,9 +262,17 @@ def fetch_binance():
 
 @app.route("/", methods=['GET'])
 def index():
+
     currency = request.args.get("currency", default="SOLUSDT")
     nfts = NFT.query.all()
+
+
     currency = CRYPTO.query.filter_by(symbol=currency).first()
+
+    # Try to find the requested currency, if not found redirect to front page
+    if not currency:
+        return redirect(url_for('index'))  # Redirect to the front page
+
     currencies = CRYPTO.query.all()
 
     # Calculate total floor price
