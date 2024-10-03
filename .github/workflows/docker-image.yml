@@ -23,7 +23,7 @@ jobs:
 
       - name: Build containers from Dockerfile and run tests
         run: |
-          docker-compose -f docker-compose-prod.yaml build
+          docker compose -f docker-compose-prod.yaml build
 
   trivy-scan:
     runs-on: [self-hosted, webmin]
@@ -71,7 +71,7 @@ jobs:
       - name: Deploy
         env:
           GITHUB_SHA: ${{ github.sha }}
-        run: docker-compose -f docker-compose-prod.yaml up -d
+        run: docker compose -f docker-compose-prod.yaml up -d
 
       - name: Clean up
         if: always()
