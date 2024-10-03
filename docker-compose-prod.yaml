@@ -24,21 +24,21 @@ services:
     networks:
       - tml_network
 
-  statsd-exporter:
-    image: prom/statsd-exporter:v0.22.4
-    container_name: statsd-exporter
-    volumes:
-      - ./conf/statsd.conf:/statsd/statsd.conf
-    command:
-      - --statsd.mapping-config=/statsd/statsd.conf
-    networks:
-      - prometheus_back-tier
-      - tml_network
+#  statsd-exporter:
+#    image: prom/statsd-exporter:v0.22.4
+#    container_name: statsd-exporter
+#    volumes:
+#      - ./conf/statsd.conf:/statsd/statsd.conf
+#    command:
+#      - --statsd.mapping-config=/statsd/statsd.conf
+#    networks:
+#      - prometheus_back-tier
+#      - tml_network
 
 networks:
   tml_network:
-  prometheus_back-tier:
-    external: true
+#  prometheus_back-tier:
+#    external: true
 
 secrets:
   env-file:
