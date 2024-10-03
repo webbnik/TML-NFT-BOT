@@ -222,12 +222,12 @@ def fetch_binance():
             },
             {  "symbol": "SOLETH",
                 "name": "Etherium",
-                "sign": "ETH"
+                "sign": "Ξ"
             },
             {
                 "symbol": "SOLBTC",
                 "name": "Bitcoin",
-                "sign": "BTC"
+                "sign": "₿"
             }
         ]
         for currency in currencies:
