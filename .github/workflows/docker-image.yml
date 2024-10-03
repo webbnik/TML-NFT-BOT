@@ -15,7 +15,7 @@ env:
 
 jobs:
   build:
-    runs-on: [self-hosted, partypooper]
+    runs-on: [self-hosted, webmin]
     name: Checkout code and build container
     steps:
       - name: Checkout code
@@ -26,7 +26,7 @@ jobs:
           docker-compose -f docker-compose-prod.yaml build
 
   trivy-scan:
-    runs-on: [self-hosted, partypooper]
+    runs-on: [self-hosted, webmin]
     name: Scan container with trivy
     needs: build
     steps:
@@ -45,11 +45,11 @@ jobs:
         uses: sarisia/actions-status-discord@v1
         if: failure()
         with:
-          title: "QueIT build and push"
+          title: "TML-NFT-BOT build and push"
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
 
   env-files:
-    runs-on: [self-hosted, partypooper]
+    runs-on: [self-hosted, webmin]
     name: Create env files
     needs: [trivy-scan]
     steps:
@@ -64,7 +64,7 @@ jobs:
           echo DISCORD_WEBHOOK_GHOST=${{ secrets.DISCORD_WEBHOOK_GHOST }} >> .env
 
   deploy:
-    runs-on: [self-hosted, partypooper]
+    runs-on: [self-hosted, webmin]
     name: Deploy to swarm, cleanup and post notification
     needs: env-files
     steps:
@@ -82,5 +82,5 @@ jobs:
         uses: sarisia/actions-status-discord@v1
         if: always()
         with:
-          title: "QueIT build and push"
+          title: "TML-NFT-BOT build and push"
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
