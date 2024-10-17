@@ -74,10 +74,11 @@ jobs:
           GITHUB_SHA: ${{ github.sha }}
         run: docker compose -f docker-compose-prod.yaml up -d
 
-      - name: Clean up
-        if: always()
-        run: |
-          rm -f .env
+# This seems to causing issues after we moved from kubernetes to Docker
+#      - name: Clean up
+#        if: always()
+#        run: |
+#          rm -f .env
 
       - name: Post status notification to Discord
         uses: sarisia/actions-status-discord@v1
