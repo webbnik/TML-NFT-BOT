@@ -138,16 +138,6 @@ def fetch_magiceden():
                 "color": 16777215,
                 "webhook": [os.getenv("DISCORD_WEBHOOK_AURIC"), os.getenv("DISCORD_ALL")],
                 "include_in_total": False
-            },
-            {
-                "symbol": "ghost_kid_dao",
-                "name": "GhostKidDAO",
-                "order": 9999,
-                "image": "https://img-cdn.magiceden.dev/rs:fill:400:400:0:0/plain/https://creator-hub-prod.s3.us-east-2.amazonaws.com/ghost_kid_dao_pfp_1662325189064.gif",
-                "url": "https://magiceden.io/marketplace/ghost_kid_dao",
-                "color": 16777215,
-                "webhook": [os.getenv("DISCORD_WEBHOOK_GHOST")],
-                "include_in_total": False
             }
         ]
 
