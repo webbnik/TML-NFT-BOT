@@ -290,8 +290,8 @@ def k8sreadiness():
     else:
         return "<h1><center>Readiness check failed</center><h1>", 500
 
-scheduler.add_job(fetch_magiceden, 'interval', seconds=20, id="magiceden", replace_existing=True, next_run_time=datetime.now().replace(second=0, microsecond=0) + timedelta(minutes=1))
-scheduler.add_job(fetch_binance, 'interval', seconds=20, id="binance", replace_existing=True, next_run_time=datetime.now().replace(second=10, microsecond=0) + timedelta(minutes=1))
+scheduler.add_job(fetch_magiceden, 'interval', seconds=40, id="magiceden", replace_existing=True, next_run_time=datetime.now().replace(second=0, microsecond=0) + timedelta(minutes=1))
+scheduler.add_job(fetch_binance, 'interval', seconds=40, id="binance", replace_existing=True, next_run_time=datetime.now().replace(second=10, microsecond=0) + timedelta(minutes=1))
 scheduler.start()
 
 # Run as gunicorn
