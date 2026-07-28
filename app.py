@@ -37,7 +37,7 @@ class NFT(db.Model):
     floorPrice = db.Column(db.Integer, nullable=False)
     listedCount = db.Column(db.Integer, nullable=False)
     avgPrice24hr = db.Column(db.Integer, nullable=False)
-    volumeAll = db.Column(db.Integer, nullable=False)
+    volumeAll = db.Column(db.Integer, nullable=True)
     include_in_total = db.Column(db.Boolean, nullable=False, default=True)
     fetched = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
