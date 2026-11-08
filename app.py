@@ -27,6 +27,23 @@ db.init_app(app)
 if os.getenv("FLASK_ENV") == "development":
     load_dotenv()
 
+
+_asset_versions = {}
+
+
+@app.template_global()
+def asset(filename):
+    """URL of a static file with a version tag based on its content, e.g.
+    /static/css/nft.css?v=3f9a1c2b7d. Browsers and Cloudflare cache static
+    files for hours, so a changed file must get a new URL to be picked up."""
+    version = _asset_versions.get(filename)
+    if version is None:
+        with open(os.path.join(app.static_folder, filename), "rb") as file:
+            version = hashlib.sha256(file.read()).hexdigest()[:10]
+        if not app.debug:
+            _asset_versions[filename] = version
+    return url_for("static", filename=filename, v=version)
+
 class NFT(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     symbol = db.Column(db.String(100), nullable=False)

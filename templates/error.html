@@ -11,7 +11,7 @@
             if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
         } catch (e) { }
     </script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/nft.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/nft.css') }}">
     <link rel="icon" href="{{ url_for('static', filename='favicon/favicon.ico') }}">
 </head>
 
