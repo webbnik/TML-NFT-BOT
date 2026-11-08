@@ -1,39 +1,17 @@
-version: '3.4'
-
+# Local development: code is mounted into the container and reloaded on change.
+# Start with: docker compose up --build   (then open http://localhost:8459)
 services:
   tml-nft-bot:
-    build: ./
-    image: tml-nft-bot
-    container_name: tml-nft-bot
+    build:
+      context: ./
+      target: production
+    image: tml-nft-bot:dev
+    container_name: tml-nft-bot-dev
     volumes:
       - ./:/app
-    restart: always
     ports:
-#      - 127.0.0.1:8459:8000
-      - 8459:8000
-    command:
-      - bash
-      - -c
-      - |
-        gunicorn -b 0.0.0.0:8000 --statsd-host=statsd-exporter:9125 --statsd-prefix=tml_nft_bot -w 2 --timeout 10 --reload --preload app:app
-    networks:
-      - tml_network
+      - 127.0.0.1:8459:8000
+    command: ["gunicorn", "-b", "0.0.0.0:8000", "-w", "2", "--timeout", "10", "--reload", "--preload", "app:app"]
     environment:
       FLASK_ENV: "development"
       PYTHONUNBUFFERED: 1
-
-  statsd-exporter:
-    image: prom/statsd-exporter:v0.22.4
-    ports:
-      - 127.0.0.1:9102:9102
-    volumes:
-      - ./conf/statsd.conf:/statsd/statsd.conf
-    command:
-      - --statsd.mapping-config=/statsd/statsd.conf
-    networks:
-      - tml_network
-
-networks:
-  tml_network:
-  phpmyadmin_phpmyadmin:
-    external: true

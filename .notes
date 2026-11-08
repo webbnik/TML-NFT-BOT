@@ -1,5 +1,5 @@
--- SQLite
--- set floorPrice to 2 for symbol ghost_kid_dao
-UPDATE nft SET floorPrice = 7090000000 WHERE symbol = 'ghost_kid_dao';
+-- Run SQL against the production database (the container has no sqlite3 CLI):
+-- docker exec -it tml-nft-bot python -c "import sqlite3; c = sqlite3.connect('instance/nft.db'); c.execute(\"UPDATE nft SET floorPrice = 7090000000 WHERE symbol = 'ghost_kid_dao'\"); c.commit()"
 
--- sqlite3 instance/nft.db "UPDATE nft SET floorPrice = 7090000000 WHERE symbol = 'ghost_kid_dao';"
+-- Export floor history to CSV, e.g. for graphs:
+-- docker exec tml-nft-bot python -c "import sqlite3, csv, sys; c = sqlite3.connect('instance/nft.db'); w = csv.writer(sys.stdout); w.writerow(['symbol', 'recorded_utc', 'floor_lamports', 'listed']); w.writerows(c.execute('SELECT symbol, recorded, floor, listed FROM floor_history ORDER BY recorded'))" > floor_history.csv

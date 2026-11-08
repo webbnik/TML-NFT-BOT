@@ -1,0 +1,21 @@
+# Weekly pull requests for outdated dependencies. Dependabot pull requests do
+# not trigger the deploy workflow (it only runs on pushes to master).
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      python-packages:
+        update-types: [minor, patch]
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

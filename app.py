@@ -7,8 +7,11 @@ import logging
 import mimetypes
 import requests
 from dotenv import load_dotenv
+from urllib.parse import urlparse
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from jinja2.exceptions import UndefinedError
 from flask import Flask, render_template, request, redirect, url_for, jsonify, send_from_directory
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -20,11 +23,6 @@ scheduler = BackgroundScheduler()
 # Timeout (seconds) for calls to Magic Eden and Binance
 REQUEST_TIMEOUT = 10
 
-app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///nft.db"
-db = SQLAlchemy()
-db.init_app(app)
-
 if os.getenv("FLASK_ENV") == "development":
     load_dotenv()
 
@@ -32,10 +30,94 @@ if os.getenv("FLASK_ENV") == "development":
 mimetypes.add_type("application/manifest+json", ".webmanifest")
 mimetypes.add_type("image/svg+xml", ".svg")
 
+app = Flask(__name__)
+# Relative SQLite paths live in the instance/ folder (a Docker volume in production)
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///nft.db")
+db = SQLAlchemy()
+db.init_app(app)
 
-# Hosts of the fallback collection images configured in fetch_magiceden().
+# Public address of the site, used for images in Discord alerts
+PUBLIC_URL = os.getenv("PUBLIC_URL", "https://nft.hardy.se").rstrip("/")
+LAMPORTS_PER_SOL = 1_000_000_000
+DEFAULT_CURRENCY = "SOLUSDT"
+
+
+@event.listens_for(Engine, "connect")
+def sqlite_settings(dbapi_connection, connection_record):
+    """WAL lets the web workers read while the scraper writes."""
+    if type(dbapi_connection).__module__.startswith("sqlite3"):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA busy_timeout=5000")
+        cursor.close()
+
+
+def utcnow():
+    """Current time as naive UTC (how all times are stored in the database)."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+# Collections to track. "webhooks" are names of environment variables holding
+# Discord webhook URLs. order 0 = collectible (shown last, not in the full set).
+COLLECTIONS = [
+    {
+        "symbol": "tomorrowland_winter",
+        "name": "A letter from the Universe (Winter)",
+        "order": 1,
+        "image": "https://pbs.twimg.com/media/FZar7ZcUsAAw0wa.jpg",
+        "url": "https://magiceden.io/marketplace/tomorrowland_winter",
+        "color": 7608595,
+        "webhooks": ["DISCORD_WEBHOOK_LETTER", "DISCORD_ALL"],
+        "include_in_total": True,
+    },
+    {
+        "symbol": "the_reflection_of_love",
+        "name": "The reflection of Love",
+        "order": 2,
+        "image": "https://moon.ly/uploads/nft/e8141974-650f-4c59-80b0-3bb9397ae049.gif",
+        "url": "https://magiceden.io/marketplace/the_reflection_of_love",
+        "color": 1274905,
+        "webhooks": ["DISCORD_WEBHOOK_REFLECTION", "DISCORD_ALL"],
+        "include_in_total": True,
+    },
+    {
+        "symbol": "tomorrowland_love_unity",
+        "name": "The Symbol of Love and Unity",
+        "order": 3,
+        "image": "https://img-cdn.magiceden.dev/rs:fill:400:400:0:0/plain/https://bafybeidzsht5g3rtb2crlgildg3hrbt5mtuiw6eiakxj5ckhftvrqyjvbm.ipfs.nftstorage.link/",
+        "url": "https://magiceden.io/marketplace/tomorrowland_love_unity",
+        "color": 1643380,
+        "webhooks": ["DISCORD_WEBHOOK_SYMBOL", "DISCORD_ALL"],
+        "include_in_total": True,
+    },
+    {
+        "symbol": "the_golden_auric",
+        "name": "The Golden Auric",
+        "order": 0,
+        "image": "https://img-cdn.magiceden.dev/rs:fill:400:400:0:0/plain/https://creator-hub-prod.s3.us-east-2.amazonaws.com/the_golden_auric_pfp_1682607788127.png",
+        "url": "https://magiceden.io/marketplace/the_golden_auric",
+        "color": 16777215,
+        "webhooks": ["DISCORD_WEBHOOK_AURIC", "DISCORD_ALL"],
+        "include_in_total": False,
+    },
+]
+
+# SOL exchange rates fetched from Binance
+CURRENCIES = [
+    {"symbol": "SOLUSDT", "name": "USDT", "sign": "$"},
+    {"symbol": "SOLEUR", "name": "Euro", "sign": "€"},
+    {"symbol": "SOLETH", "name": "Ethereum", "sign": "Ξ"},
+    {"symbol": "SOLBTC", "name": "Bitcoin", "sign": "₿"},
+]
+
+# Price history: a row is stored whenever a floor/listed count changes,
+# and at least this often otherwise. History is kept indefinitely.
+HISTORY_INTERVAL = timedelta(minutes=5)
+
+
+# Hosts of the fallback collection images in COLLECTIONS.
 # Floor NFT artwork is served from this site itself (/media/).
-IMAGE_HOSTS = ["https://pbs.twimg.com", "https://moon.ly", "https://img-cdn.magiceden.dev"]
+IMAGE_HOSTS = sorted({f"https://{urlparse(c['image']).hostname}" for c in COLLECTIONS})
 
 # Only this site's own files may run or load; nothing inline, no other sites.
 CONTENT_SECURITY_POLICY = "; ".join([
@@ -92,7 +174,7 @@ class NFT(db.Model):
     avgPrice24hr = db.Column(db.Integer, nullable=False)
     volumeAll = db.Column(db.Integer, nullable=True)
     include_in_total = db.Column(db.Boolean, nullable=False, default=True)
-    fetched = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    fetched = db.Column(db.DateTime, nullable=False, default=utcnow)
 
 class CRYPTO(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -100,7 +182,7 @@ class CRYPTO(db.Model):
     name = db.Column(db.String(100), nullable=False)
     sign = db.Column(db.String(10), nullable=False)
     price = db.Column(db.Integer, nullable=False)
-    fetched = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    fetched = db.Column(db.DateTime, nullable=False, default=utcnow)
 
 class MEDIA(db.Model):
     """Artwork of the cheapest listed NFT (the "floor NFT") of a collection,
@@ -110,14 +192,70 @@ class MEDIA(db.Model):
     token_name = db.Column(db.String(200), nullable=False)
     image_file = db.Column(db.String(200), nullable=True)
     video_file = db.Column(db.String(200), nullable=True)
-    fetched = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    fetched = db.Column(db.DateTime, nullable=False, default=utcnow)
+
+class FloorHistory(db.Model):
+    """Floor price history per collection (prices in lamports, like NFT)."""
+    __tablename__ = "floor_history"
+    __table_args__ = (db.Index("ix_floor_history_symbol_recorded", "symbol", "recorded"),)
+    id = db.Column(db.Integer, primary_key=True)
+    symbol = db.Column(db.String(100), nullable=False)
+    recorded = db.Column(db.DateTime, nullable=False, default=utcnow)
+    floor = db.Column(db.BigInteger, nullable=False)
+    listed = db.Column(db.Integer, nullable=True)
+    avg24h = db.Column(db.BigInteger, nullable=True)
+    volume_all = db.Column(db.Float, nullable=True)
+
+class RateHistory(db.Model):
+    """SOL exchange rate history (e.g. SOLUSDT), to convert old floors later."""
+    __tablename__ = "rate_history"
+    __table_args__ = (db.Index("ix_rate_history_symbol_recorded", "symbol", "recorded"),)
+    id = db.Column(db.Integer, primary_key=True)
+    symbol = db.Column(db.String(20), nullable=False)
+    recorded = db.Column(db.DateTime, nullable=False, default=utcnow)
+    price = db.Column(db.Float, nullable=False)
+
+
+def record_floor_history(symbol, data, now):
+    """Store a history row if the floor or listed count changed, or if the
+    last row is older than HISTORY_INTERVAL."""
+    last = (FloorHistory.query.filter_by(symbol=symbol)
+            .order_by(FloorHistory.recorded.desc()).first())
+    floor, listed = data.get("floorPrice"), data.get("listedCount")
+    if last and last.floor == floor and last.listed == listed and now - last.recorded < HISTORY_INTERVAL:
+        return
+    db.session.add(FloorHistory(symbol=symbol, recorded=now, floor=floor, listed=listed,
+                                avg24h=data.get("avgPrice24hr"), volume_all=data.get("volumeAll")))
+
+
+def record_rate_history(symbol, price, now):
+    """Store the exchange rate at most once per HISTORY_INTERVAL."""
+    last = (RateHistory.query.filter_by(symbol=symbol)
+            .order_by(RateHistory.recorded.desc()).first())
+    if last and now - last.recorded < HISTORY_INTERVAL:
+        return
+    db.session.add(RateHistory(symbol=symbol, recorded=now, price=price))
 
 def discord_webhook(nft, current_floorprice, listedcount, webhooks):
     upordown = "increased" if nft.floorPrice < current_floorprice else "decreased"
-    upordowngraphic = "https://nft.hardy.se/static/img/increase.png" if upordown == "increased" else "https://nft.hardy.se/static/img/decrease.png"
+    upordowngraphic = f"{PUBLIC_URL}/static/img/{'increase' if upordown == 'increased' else 'decrease'}.png"
+
+    # Show the current floor NFT's artwork when we have it, otherwise the collection image
+    thumbnail = nft.image
+    floor_nft_field = []
+    media = db.session.get(MEDIA, nft.symbol)
+    if media:
+        if media.image_file:
+            thumbnail = f"{PUBLIC_URL}/media/{media.image_file}"
+        floor_nft_field = [{
+            "name": "Floor NFT",
+            "value": f"[{media.token_name}](https://magiceden.io/item-details/{media.mint})",
+            "inline": False,
+        }]
+
     payload = {
         "username": "NFT",
-        "avatar_url": "https://nft.hardy.se/static/favicon/android-chrome-512x512.png",
+        "avatar_url": f"{PUBLIC_URL}/static/favicon/android-chrome-512x512.png",
         "embeds": [
             {
                 "title": f"{nft.name}",
@@ -125,8 +263,8 @@ def discord_webhook(nft, current_floorprice, listedcount, webhooks):
                 "description": f"Has {upordown} from {nft.floorPrice / 1000000000} SOL to {current_floorprice / 1000000000} SOL",
                 "color": nft.color,
                 "author": {
-                "name": "nft.hardy.se",
-                "url": "https://nft.hardy.se/"
+                    "name": urlparse(PUBLIC_URL).hostname,
+                    "url": f"{PUBLIC_URL}/"
                 },
                 "fields": [
                     {
@@ -144,9 +282,9 @@ def discord_webhook(nft, current_floorprice, listedcount, webhooks):
                         "value": f"{listedcount}",
                         "inline": True
                     },
-                ],
+                ] + floor_nft_field,
                 "thumbnail": {
-                    "url": f"{nft.image}"
+                    "url": thumbnail
                 },
                 "footer": {
                     "text": f"Floor price has {upordown}",
@@ -177,50 +315,7 @@ def get_json(url):
 
 def fetch_magiceden():
     with app.app_context():
-        symbols = [
-            {
-                "symbol": "tomorrowland_winter",
-                "name": "A letter from the Universe (Winter)",
-                "order": 1,
-                "image": "https://pbs.twimg.com/media/FZar7ZcUsAAw0wa.jpg",
-                "url": "https://magiceden.io/marketplace/tomorrowland_winter",
-                "color": 7608595,
-                "webhook": [os.getenv("DISCORD_WEBHOOK_LETTER"), os.getenv("DISCORD_ALL")],
-                "include_in_total": True
-            },
-            {
-                "symbol": "the_reflection_of_love",
-                "name": "The reflection of Love",
-                "order": 2,
-                "image": "https://moon.ly/uploads/nft/e8141974-650f-4c59-80b0-3bb9397ae049.gif",
-                "url": "https://magiceden.io/marketplace/the_reflection_of_love",
-                "color": 1274905,
-                "webhook": [os.getenv("DISCORD_WEBHOOK_REFLECTION"), os.getenv("DISCORD_ALL")],
-                "include_in_total": True
-            },
-            {
-                "symbol": "tomorrowland_love_unity",
-                "name": "The Symbol of Love and Unity",
-                "order": 3,
-                "image": "https://img-cdn.magiceden.dev/rs:fill:400:400:0:0/plain/https://bafybeidzsht5g3rtb2crlgildg3hrbt5mtuiw6eiakxj5ckhftvrqyjvbm.ipfs.nftstorage.link/",
-                "url": "https://magiceden.io/marketplace/tomorrowland_love_unity",
-                "color": 1643380,
-                "webhook": [os.getenv("DISCORD_WEBHOOK_SYMBOL"), os.getenv("DISCORD_ALL")],
-                "include_in_total": True
-            },
-            {
-                "symbol": "the_golden_auric",
-                "name": "The Golden Auric",
-                "order": 0,
-                "image": "https://img-cdn.magiceden.dev/rs:fill:400:400:0:0/plain/https://creator-hub-prod.s3.us-east-2.amazonaws.com/the_golden_auric_pfp_1682607788127.png",
-                "url": "https://magiceden.io/marketplace/the_golden_auric",
-                "color": 16777215,
-                "webhook": [os.getenv("DISCORD_WEBHOOK_AURIC"), os.getenv("DISCORD_ALL")],
-                "include_in_total": False
-            }
-        ]
-
-        for symbol in symbols:
+        for symbol in COLLECTIONS:
             url = f"https://api-mainnet.magiceden.dev/v2/collections/{symbol['symbol']}/stats?listingAggMode=true"
             data = get_json(url)
             # Skip this collection on API errors or unexpected responses
@@ -249,16 +344,18 @@ def fetch_magiceden():
                         avgPrice24hr=data.get("avgPrice24hr", 0),
                         volumeAll=data.get("volumeAll"),
                         include_in_total=symbol.get("include_in_total"),
-                        fetched=datetime.utcnow()
+                        fetched=utcnow()
                     )
                     db.session.add(nft)
+                    record_floor_history(nft.symbol, data, nft.fetched)
                     db.session.commit()
 
                 # If NFT exists
                 else:
                     # Send message to Discord if there is a change in floor price
                     if nft.floorPrice != data["floorPrice"]:
-                        discord_webhook(nft, data["floorPrice"], data["listedCount"], symbol["webhook"])
+                        webhooks = [os.getenv(name) for name in symbol["webhooks"]]
+                        discord_webhook(nft, data["floorPrice"], data.get("listedCount"), webhooks)
 
                     # Update the NFT in the database
                     nft_attributes = {
@@ -272,10 +369,11 @@ def fetch_magiceden():
                         "avgPrice24hr": data.get("avgPrice24hr", 0),
                         "volumeAll": data.get("volumeAll"),
                         "include_in_total": symbol.get("include_in_total"),
-                        "fetched": datetime.utcnow()
+                        "fetched": utcnow()
                     }
                     for attr, value in nft_attributes.items():
                         setattr(nft, attr, value)
+                    record_floor_history(nft.symbol, data, nft.fetched)
                     db.session.commit()
                 # Avoid hitting the rate limit of 2 qps
                 time.sleep(1)
@@ -283,28 +381,7 @@ def fetch_magiceden():
 
 def fetch_binance():
     with app.app_context():
-        currencies = [
-            {
-                "symbol": "SOLUSDT",
-                "name": "USDT",
-                "sign": "$"
-            },
-            {
-                "symbol": "SOLEUR",
-                "name": "Euro",
-                "sign": "€"
-            },
-            {  "symbol": "SOLETH",
-                "name": "Ethereum",
-                "sign": "Ξ"
-            },
-            {
-                "symbol": "SOLBTC",
-                "name": "Bitcoin",
-                "sign": "₿"
-            }
-        ]
-        for currency in currencies:
+        for currency in CURRENCIES:
             url = f"https://api.binance.com/api/v3/ticker/price?symbol={currency['symbol']}"
             data = get_json(url)
             if not isinstance(data, dict) or "price" not in data:
@@ -318,9 +395,10 @@ def fetch_binance():
                     price=data["price"],
                     name=currency["name"],
                     sign=currency["sign"],
-                    fetched=datetime.utcnow()
+                    fetched=utcnow()
                 )
                 db.session.add(crypto)
+                record_rate_history(crypto.symbol, float(data["price"]), crypto.fetched)
                 db.session.commit()
 
             # If currency exists
@@ -330,10 +408,11 @@ def fetch_binance():
                     "price": data.get("price"),
                     "name": currency.get("name"),
                     "sign": currency.get("sign"),
-                    "fetched": datetime.utcnow()
+                    "fetched": utcnow()
                 }
                 for attr, value in crypto_attributes.items():
                     setattr(crypto, attr, value)
+                record_rate_history(crypto.symbol, float(data["price"]), crypto.fetched)
                 db.session.commit()
 
 
@@ -477,7 +556,7 @@ def fetch_media():
             media.token_name = token.get("name") or nft.name
             media.image_file = image_file
             media.video_file = video_file
-            media.fetched = datetime.utcnow()
+            media.fetched = utcnow()
             db.session.commit()
             print(f"Floor NFT media for {nft.symbol}: {media.token_name} ({image_file}, {video_file})")
 
@@ -486,10 +565,6 @@ def fetch_media():
         for filename in os.listdir(MEDIA_DIR):
             if filename not in in_use and not filename.endswith(".part"):
                 os.remove(os.path.join(MEDIA_DIR, filename))
-
-
-LAMPORTS_PER_SOL = 1_000_000_000
-DEFAULT_CURRENCY = "SOLUSDT"
 
 
 def iso_utc(dt):
@@ -584,6 +659,34 @@ def api_prices():
     return response
 
 
+def get_history(days, points=200):
+    """Floor history per collection for the last `days` days, reduced to at
+    most `points` values per collection (the last value in each time slot)."""
+    since = utcnow() - timedelta(days=days)
+    slot = max(1, int(days * 86400 / points))
+    rows = (db.session.query(FloorHistory.symbol, FloorHistory.recorded, FloorHistory.floor)
+            .filter(FloorHistory.recorded >= since)
+            .order_by(FloorHistory.symbol, FloorHistory.recorded).all())
+    history = {}
+    for symbol, recorded, floor in rows:
+        series = history.setdefault(symbol, {})
+        series[int(recorded.replace(tzinfo=timezone.utc).timestamp()) // slot] = (recorded, floor)
+    return {
+        symbol: [[iso_utc(recorded), floor / LAMPORTS_PER_SOL] for recorded, floor in series.values()]
+        for symbol, series in history.items()
+    }
+
+
+@app.route("/api/history", methods=['GET'])
+def api_history():
+    """Floor price history, e.g. /api/history?days=7 (max 3650 days)."""
+    days = request.args.get("days", default=7, type=float)
+    days = min(max(days, 1 / 24), 3650)
+    response = jsonify({"days": days, "history": get_history(days)})
+    response.headers["Cache-Control"] = "public, max-age=60"
+    return response
+
+
 @app.route("/favicon.ico", methods=['GET'])
 @app.route("/apple-touch-icon.png", methods=['GET'])
 @app.route("/apple-touch-icon-precomposed.png", methods=['GET'])
@@ -607,8 +710,8 @@ def handle_undefined_error(e):
     return render_template('error.html', error_message=str(e)), 500
 
 @app.route('/readiness')
-def k8sreadiness():
-  # Check if the database contains any nfts and crypto
+def readiness():
+    """200 once both scrapers have stored data (useful for health checks)."""
     nft_exists = NFT.query.first() is not None
     crypto_exists = CRYPTO.query.first() is not None
 
@@ -621,10 +724,12 @@ def k8sreadiness():
 with app.app_context():
     db.create_all()
 
-scheduler.add_job(fetch_magiceden, 'interval', seconds=40, id="magiceden", replace_existing=True, next_run_time=datetime.now().replace(second=0, microsecond=0) + timedelta(minutes=1))
-scheduler.add_job(fetch_binance, 'interval', seconds=40, id="binance", replace_existing=True, next_run_time=datetime.now().replace(second=10, microsecond=0) + timedelta(minutes=1))
-scheduler.add_job(fetch_media, 'interval', minutes=5, id="media", replace_existing=True, next_run_time=datetime.now().replace(second=25, microsecond=0) + timedelta(minutes=1))
-scheduler.start()
+# Background jobs. TML_DISABLE_SCHEDULER=1 turns them off (used by the tests).
+if not os.getenv("TML_DISABLE_SCHEDULER"):
+    scheduler.add_job(fetch_magiceden, 'interval', seconds=40, id="magiceden", replace_existing=True, next_run_time=datetime.now().replace(second=0, microsecond=0) + timedelta(minutes=1))
+    scheduler.add_job(fetch_binance, 'interval', seconds=40, id="binance", replace_existing=True, next_run_time=datetime.now().replace(second=10, microsecond=0) + timedelta(minutes=1))
+    scheduler.add_job(fetch_media, 'interval', minutes=5, id="media", replace_existing=True, next_run_time=datetime.now().replace(second=25, microsecond=0) + timedelta(minutes=1))
+    scheduler.start()
 
 # Run as gunicorn
 if __name__ != '__main__':
@@ -633,10 +738,6 @@ if __name__ != '__main__':
     app.logger.handlers = gunicorn_logger.handlers
     app.logger.setLevel(gunicorn_logger.level)
 
-# Run as standalone flask
+# Run as standalone flask: python app.py
 if __name__ == "__main__":
-
-    with app.app_context():
-        app.run()
-
-    app.run(host="0.0.0.0", port=8457, debug=True)
+    app.run(host="127.0.0.1", port=8457)

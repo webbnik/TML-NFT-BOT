@@ -12,42 +12,25 @@ permissions:
 jobs:
   build:
     runs-on: [self-hosted, webmin]
-    name: Checkout code and build container
+    name: Test and build container
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Build containers from Dockerfile and run tests
+      - name: Run tests
+        # Builds the "test" stage of the Dockerfile, which fails if a test fails
         run: |
-          docker compose -f docker-compose-prod.yaml build
+          docker build --target test --tag tml-nft-bot-test:${{ github.sha }} .
+          docker image rm tml-nft-bot-test:${{ github.sha }}
 
-#  trivy-scan:
-#    runs-on: [self-hosted, webmin]
-#    name: Scan container with trivy
-#    needs: build
-#    steps:
-#      - uses: aquasecurity/trivy-action@master
-#        with:
-#          image-ref: "tml-nft-bot:${{ github.sha }}"
-#          format: "table"
-#          exit-code: "1"
-#          ignore-unfixed: true
-#          vuln-type: "os,library"
-#          severity: "CRITICAL,HIGH"
-#          ignore-policy: /conf/ignore-vuln-policy.rego
-#          cache-dir: /tmp/.cache
-#
-#      - name: Post status notification to Discord
-#        uses: sarisia/actions-status-discord@v1
-#        if: failure()
-#        with:
-#          title: "TML-NFT-BOT build and push"
-#          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+      - name: Build container
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+        run: docker compose -f docker-compose-prod.yaml build
 
   env-files:
     runs-on: [self-hosted, webmin]
     name: Create env files
-#    needs: [trivy-scan]
     needs: [build]
     steps:
       - name: Create env file for front
@@ -71,7 +54,7 @@ jobs:
 
   deploy:
     runs-on: [self-hosted, webmin]
-    name: Deploy to swarm, cleanup and post notification
+    name: Deploy
     needs: env-files
     steps:
       - name: Deploy
@@ -79,15 +62,16 @@ jobs:
           GITHUB_SHA: ${{ github.sha }}
         run: docker compose -f docker-compose-prod.yaml up -d
 
-# This seems to causing issues after we moved from kubernetes to Docker
-#      - name: Clean up
-#        if: always()
-#        run: |
-#          rm -f .env
-
+  notify:
+    runs-on: [self-hosted, webmin]
+    name: Post status notification
+    # Runs after everything, also when the tests or the deploy failed
+    needs: [build, env-files, deploy]
+    if: always()
+    steps:
       - name: Post status notification to Discord
         uses: sarisia/actions-status-discord@eb045afee445dc055c18d3d90bd0f244fd062708 # v1.16.0
-        if: always()
         with:
           title: "TML-NFT-BOT build and push"
+          status: ${{ contains(needs.*.result, 'failure') && 'failure' || (contains(needs.*.result, 'cancelled') && 'cancelled' || 'success') }}
           webhook: ${{ secrets.DISCORD_WEBHOOK }}

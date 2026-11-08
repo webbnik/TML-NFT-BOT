@@ -29,10 +29,13 @@
             <span class="delta" data-field="delta" title="Floor compared to the 24h average sale price"></span>
         </div>
 
-        <dl class="meta">
-            <div><dt>Listed</dt><dd data-field="listed">{{ nft.listed }}</dd></div>
-            <div><dt>24h avg</dt><dd data-field="avg24h">{{ sol(nft.avg24h) }}</dd></div>
-        </dl>
+        <div class="meta">
+            <dl>
+                <div><dt>Listed</dt><dd data-field="listed">{{ nft.listed }}</dd></div>
+                <div><dt>24h avg</dt><dd data-field="avg24h">{{ sol(nft.avg24h) }}</dd></div>
+            </dl>
+            <span class="spark" data-spark hidden></span>
+        </div>
     </div>
 
     <div class="holding">

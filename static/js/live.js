@@ -115,6 +115,7 @@
             }
 
             renderMedia(card, nft);
+            renderSpark($('[data-spark]', card), nft);
 
             const qty = holdings[nft.symbol] || 0;
             const input = $('[data-qty]', card);
@@ -129,6 +130,66 @@
         setText($('[data-holdings-count]'), holdingsCount ? `${holdingsCount} NFT${holdingsCount === 1 ? '' : 's'}` : 'set how many you own below');
 
         renderStatus();
+    }
+
+    // ---------- 7-day floor trend lines ----------
+    const HISTORY_DAYS = 7;
+    const HISTORY_REFRESH_MS = 5 * 60 * 1000;
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    let floorHistory = {};
+
+    function svgElement(name, attributes) {
+        const el = document.createElementNS(SVG_NS, name);
+        Object.entries(attributes).forEach(([key, value]) => el.setAttribute(key, value));
+        return el;
+    }
+
+    function renderSpark(el, nft) {
+        // Stored history plus the current live floor, so the line ends "now"
+        const points = (floorHistory[nft.symbol] || []).concat([[nft.fetched, nft.floor]])
+            .map(([time, value]) => [Date.parse(time), value])
+            .filter(([time]) => !Number.isNaN(time))
+            .sort((a, b) => a[0] - b[0]);
+        if (points.length < 3) {
+            el.hidden = true; // not enough data collected yet
+            return;
+        }
+
+        const W = 100, H = 26, PAD = 2;
+        const t0 = points[0][0], t1 = points[points.length - 1][0];
+        const values = points.map(p => p[1]);
+        const min = Math.min(...values), max = Math.max(...values);
+        const x = t => (t1 === t0 ? W : (t - t0) / (t1 - t0) * W).toFixed(2);
+        const y = v => (max === min ? H / 2 : PAD + (1 - (v - min) / (max - min)) * (H - 2 * PAD)).toFixed(2);
+
+        // Step line: a floor price holds until it changes
+        let d = `M${x(points[0][0])} ${y(points[0][1])}`;
+        for (let i = 1; i < points.length; i++) d += ` H${x(points[i][0])} V${y(points[i][1])}`;
+
+        const svg = svgElement('svg', { viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: 'none', 'aria-hidden': 'true' });
+        svg.append(svgElement('path', { class: 'area', d: `${d} V${H} H${x(t0)} Z` }), svgElement('path', { class: 'line', d }));
+        el.replaceChildren(svg);
+
+        const first = values[0], last = values[values.length - 1];
+        const change = first ? (last - first) / first * 100 : 0;
+        el.classList.toggle('up', change > 0.05);
+        el.classList.toggle('down', change < -0.05);
+        const since = new Date(t0).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+        const label = `${HISTORY_DAYS}-day floor trend: ${change >= 0 ? '+' : ''}${number(change, 1)}% (since ${since})`;
+        el.title = label;
+        el.setAttribute('role', 'img');
+        el.setAttribute('aria-label', label);
+        el.hidden = false;
+    }
+
+    async function loadHistory() {
+        if (document.hidden) return;
+        try {
+            const response = await fetch(`/api/history?days=${HISTORY_DAYS}`);
+            if (!response.ok) return;
+            floorHistory = (await response.json()).history || {};
+            render();
+        } catch (e) { /* keep the previous lines */ }
     }
 
     // ---------- Floor NFT artwork ----------
@@ -324,4 +385,6 @@
     applyTheme();
     applyHoldingsToggle();
     render();
+    loadHistory();
+    setInterval(loadHistory, HISTORY_REFRESH_MS);
 })();

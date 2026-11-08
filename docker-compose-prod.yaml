@@ -1,38 +1,27 @@
-version: '3.8'
-
 services:
   tml-nft-bot:
-    build: ./
+    build:
+      context: ./
+      target: production
     image: tml-nft-bot:${GITHUB_SHA}
     container_name: tml-nft-bot
     restart: always
     ports:
       - 127.0.0.1:8457:8000
-    command:
-      - bash
-      - -c
-      - |
-        gunicorn -b 0.0.0.0:8000 --statsd-host=statsd-exporter:9125 --statsd-prefix=tml_nft_bot -w 2 --timeout 10 --preload app:app
     environment:
       PYTHONUNBUFFERED: 1
     # Webhooks are passed as environment variables; the file itself is not mounted
     env_file:
       - .env
+    volumes:
+      # Database (incl. price history) and downloaded artwork survive deploys
+      - tml-nft-data:/app/instance
     networks:
       - tml_network
 
-#  statsd-exporter:
-#    image: prom/statsd-exporter:v0.22.4
-#    container_name: statsd-exporter
-#    volumes:
-#      - ./conf/statsd.conf:/statsd/statsd.conf
-#    command:
-#      - --statsd.mapping-config=/statsd/statsd.conf
-#    networks:
-#      - prometheus_back-tier
-#      - tml_network
+volumes:
+  tml-nft-data:
+    name: tml-nft-data
 
 networks:
   tml_network:
-#  prometheus_back-tier:
-#    external: true
