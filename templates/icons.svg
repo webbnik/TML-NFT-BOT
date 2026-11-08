@@ -1,5 +1,5 @@
 <!-- Icon sprite: simple line icons drawn for this project (no third-party icon set) -->
-<svg xmlns="http://www.w3.org/2000/svg" style="display: none">
+<svg xmlns="http://www.w3.org/2000/svg" class="sprite">
     <defs>
         <symbol id="i-external" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M14 4h6v6" />

@@ -15,11 +15,9 @@ services:
         gunicorn -b 0.0.0.0:8000 --statsd-host=statsd-exporter:9125 --statsd-prefix=tml_nft_bot -w 2 --timeout 10 --reload --preload app:app
     environment:
       PYTHONUNBUFFERED: 1
+    # Webhooks are passed as environment variables; the file itself is not mounted
     env_file:
       - .env
-    secrets:
-      - source: env-file
-        target: /app/.env
     networks:
       - tml_network
 
@@ -38,8 +36,3 @@ networks:
   tml_network:
 #  prometheus_back-tier:
 #    external: true
-
-secrets:
-  env-file:
-    name: env-file-${GITHUB_SHA}
-    file: ./.env

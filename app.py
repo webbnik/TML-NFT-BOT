@@ -28,6 +28,36 @@ if os.getenv("FLASK_ENV") == "development":
     load_dotenv()
 
 
+# Hosts of the fallback collection images configured in fetch_magiceden().
+# Floor NFT artwork is served from this site itself (/media/).
+IMAGE_HOSTS = ["https://pbs.twimg.com", "https://moon.ly", "https://img-cdn.magiceden.dev"]
+
+# Only this site's own files may run or load; nothing inline, no other sites.
+CONTENT_SECURITY_POLICY = "; ".join([
+    "default-src 'self'",
+    "script-src 'self'",
+    "style-src 'self'",
+    "font-src 'self'",
+    f"img-src 'self' {' '.join(IMAGE_HOSTS)}",
+    "media-src 'self'",
+    "connect-src 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+])
+
+
+@app.after_request
+def security_headers(response):
+    response.headers["Content-Security-Policy"] = CONTENT_SECURITY_POLICY
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=()"
+    return response
+
+
 _asset_versions = {}
 
 
@@ -319,14 +349,18 @@ IPFS_PATH = re.compile(r"^(?:ipfs://|https?://[^/]+/ipfs/)(?:ipfs/)?([A-Za-z0-9]
 
 
 def ipfs_to_gateway(url):
-    """Rewrite any IPFS URL to IPFS_GATEWAY. Other URLs are returned unchanged."""
-    if not url:
+    """Rewrite an IPFS URL to IPFS_GATEWAY. Returns None for anything that is
+    not IPFS, so the server only ever downloads from the gateway it trusts."""
+    if not url or not IPFS_GATEWAY.startswith("https://"):
         return None
-    url = url.split("?")[0]
+    url = url.split("?")[0].split("#")[0]
     match = IPFS_SUBDOMAIN.match(url) or IPFS_PATH.match(url)
     if not match:
-        return url
+        return None
     cid, path = match.groups()
+    # Only plain file paths (no "..", no odd characters)
+    if not re.fullmatch(r"[A-Za-z0-9._/-]*", path) or ".." in path:
+        return None
     return f"{IPFS_GATEWAY}/{cid}/{path}".rstrip("/")
 
 

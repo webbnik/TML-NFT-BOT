@@ -107,6 +107,11 @@ a {
     color: inherit;
 }
 
+/* Icon sprite (templates/icons.svg) is only a source for <use> */
+.sprite {
+    display: none;
+}
+
 .icon {
     width: 1.1em;
     height: 1.1em;

@@ -5,13 +5,9 @@ on:
     branches:
       - master
 
-env:
-  DISCORD_ALL: ${{ secrets.DISCORD_ALL }}
-  DISCORD_WEBHOOK_REFLECTION: ${{ secrets.DISCORD_WEBHOOK_REFLECTION }}
-  DISCORD_WEBHOOK_LETTER: ${{ secrets.DISCORD_WEBHOOK_LETTER }}
-  DISCORD_WEBHOOK_SYMBOL: ${{ secrets.DISCORD_WEBHOOK_SYMBOL }}
-  DISCORD_WEBHOOK_AURIC: ${{ secrets.DISCORD_WEBHOOK_AURIC }}
-  DISCORD_WEBHOOK_GHOST: ${{ secrets.DISCORD_WEBHOOK_GHOST }}
+# The workflow only needs to read the repository
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -19,7 +15,7 @@ jobs:
     name: Checkout code and build container
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Build containers from Dockerfile and run tests
         run: |
@@ -55,14 +51,23 @@ jobs:
     needs: [build]
     steps:
       - name: Create env file for front
+        # Secrets are only given to this step, and the file is readable by the runner user only
+        env:
+          DISCORD_ALL: ${{ secrets.DISCORD_ALL }}
+          DISCORD_WEBHOOK_REFLECTION: ${{ secrets.DISCORD_WEBHOOK_REFLECTION }}
+          DISCORD_WEBHOOK_LETTER: ${{ secrets.DISCORD_WEBHOOK_LETTER }}
+          DISCORD_WEBHOOK_SYMBOL: ${{ secrets.DISCORD_WEBHOOK_SYMBOL }}
+          DISCORD_WEBHOOK_AURIC: ${{ secrets.DISCORD_WEBHOOK_AURIC }}
         run: |
-          touch .env
-          echo DISCORD_ALL=${{ secrets.DISCORD_ALL }} >> .env
-          echo DISCORD_WEBHOOK_REFLECTION=${{ secrets.DISCORD_WEBHOOK_REFLECTION }} >> .env
-          echo DISCORD_WEBHOOK_LETTER=${{ secrets.DISCORD_WEBHOOK_LETTER }} >> .env
-          echo DISCORD_WEBHOOK_SYMBOL=${{ secrets.DISCORD_WEBHOOK_SYMBOL }} >> .env
-          echo DISCORD_WEBHOOK_AURIC=${{ secrets.DISCORD_WEBHOOK_AURIC }} >> .env
-          echo DISCORD_WEBHOOK_GHOST=${{ secrets.DISCORD_WEBHOOK_GHOST }} >> .env
+          umask 077
+          {
+            echo "DISCORD_ALL=$DISCORD_ALL"
+            echo "DISCORD_WEBHOOK_REFLECTION=$DISCORD_WEBHOOK_REFLECTION"
+            echo "DISCORD_WEBHOOK_LETTER=$DISCORD_WEBHOOK_LETTER"
+            echo "DISCORD_WEBHOOK_SYMBOL=$DISCORD_WEBHOOK_SYMBOL"
+            echo "DISCORD_WEBHOOK_AURIC=$DISCORD_WEBHOOK_AURIC"
+          } > .env
+          chmod 600 .env
 
   deploy:
     runs-on: [self-hosted, webmin]
@@ -81,7 +86,7 @@ jobs:
 #          rm -f .env
 
       - name: Post status notification to Discord
-        uses: sarisia/actions-status-discord@v1
+        uses: sarisia/actions-status-discord@eb045afee445dc055c18d3d90bd0f244fd062708 # v1.16.0
         if: always()
         with:
           title: "TML-NFT-BOT build and push"
