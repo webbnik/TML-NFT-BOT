@@ -1,75 +1,865 @@
+/* ---------- Font ----------
+   Space Grotesk, self-hosted. SIL Open Font License 1.1, see static/fonts/OFL.txt */
+@font-face {
+    font-family: "Space Grotesk";
+    font-style: normal;
+    font-weight: 500 700;
+    font-display: swap;
+    src: url("../fonts/SpaceGrotesk-latin.woff2") format("woff2");
+}
+
+/* ---------- Theme tokens ---------- */
+:root {
+    color-scheme: dark;
+    --bg: #0b0816;
+    --bg-glow-1: rgba(124, 77, 255, 0.22);
+    --bg-glow-2: rgba(227, 183, 91, 0.10);
+    --surface: #151027;
+    --surface-2: #1e1736;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.16);
+    --text: #eeeaf8;
+    --muted: #9b94b5;
+    --gold: #e7bd62;
+    --gold-soft: rgba(231, 189, 98, 0.14);
+    --accent: #9d7bff;
+    --up: #3fd49a;
+    --up-soft: rgba(63, 212, 154, 0.14);
+    --down: #ff6f81;
+    --down-soft: rgba(255, 111, 129, 0.14);
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    --radius: 18px;
+    --font-display: "Space Grotesk", system-ui, sans-serif;
+    --font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+@media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+        color-scheme: light;
+        --bg: #f5f3fb;
+        --bg-glow-1: rgba(124, 77, 255, 0.14);
+        --bg-glow-2: rgba(214, 160, 50, 0.12);
+        --surface: #ffffff;
+        --surface-2: #f0edf8;
+        --border: rgba(26, 18, 56, 0.09);
+        --border-strong: rgba(26, 18, 56, 0.18);
+        --text: #1b1531;
+        --muted: #6a6386;
+        --gold: #a8761a;
+        --gold-soft: rgba(168, 118, 26, 0.12);
+        --accent: #6a3fe0;
+        --up: #0f8a5c;
+        --up-soft: rgba(15, 138, 92, 0.12);
+        --down: #cf3249;
+        --down-soft: rgba(207, 50, 73, 0.10);
+        --shadow: 0 10px 30px rgba(40, 24, 90, 0.10);
+    }
+}
+
+:root[data-theme="light"] {
+    color-scheme: light;
+    --bg: #f5f3fb;
+    --bg-glow-1: rgba(124, 77, 255, 0.14);
+    --bg-glow-2: rgba(214, 160, 50, 0.12);
+    --surface: #ffffff;
+    --surface-2: #f0edf8;
+    --border: rgba(26, 18, 56, 0.09);
+    --border-strong: rgba(26, 18, 56, 0.18);
+    --text: #1b1531;
+    --muted: #6a6386;
+    --gold: #a8761a;
+    --gold-soft: rgba(168, 118, 26, 0.12);
+    --accent: #6a3fe0;
+    --up: #0f8a5c;
+    --up-soft: rgba(15, 138, 92, 0.12);
+    --down: #cf3249;
+    --down-soft: rgba(207, 50, 73, 0.10);
+    --shadow: 0 10px 30px rgba(40, 24, 90, 0.10);
+}
+
+/* ---------- Base ---------- */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
 body {
-    padding: 4px;
+    margin: 0;
+    min-height: 100vh;
+    background:
+        radial-gradient(900px 500px at 10% -10%, var(--bg-glow-1), transparent 70%),
+        radial-gradient(700px 400px at 95% 0%, var(--bg-glow-2), transparent 70%),
+        var(--bg);
+    background-attachment: fixed;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.5;
+    font-variant-numeric: tabular-nums;
 }
 
-.dropdownitems {
-    text-align: center;
+a {
+    color: inherit;
 }
 
-.card-container {
-    padding: 4px;
+.icon {
+    width: 1.1em;
+    height: 1.1em;
+    flex: none;
+    vertical-align: -0.18em;
 }
 
-.floorprice {
-    text-align: center;
-    font-size: 16px;
-    line-height: 1;
+.icon-sm {
+    width: 0.8em;
+    height: 0.8em;
+    vertical-align: 0;
 }
 
-.date {
-    font-size: 9px;
-    line-height: 0.9;
-    color: gray;
+button,
+input {
+    font: inherit;
+    color: inherit;
 }
 
-.card-header {
-    padding: 6px 10px 0px 8px;
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
 }
 
-.card-link {
+.label {
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.hint {
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    opacity: 0.8;
+}
+
+/* ---------- Layout ---------- */
+.topbar,
+main,
+.footer {
+    width: 100%;
+    max-width: 1140px;
+    margin: 0 auto;
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+/* ---------- Top bar ---------- */
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 14px;
+    padding-bottom: 14px;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.brand img {
+    border-radius: 8px;
+}
+
+.brand-name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.05rem;
+    line-height: 1.2;
+}
+
+.brand-sub {
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+
+.topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--up);
+    box-shadow: 0 0 0 0 var(--up);
+    animation: pulse 2s infinite;
+}
+
+.status.is-stale .status-dot {
+    background: var(--gold);
+    animation: none;
+}
+
+.status.is-offline .status-dot {
+    background: var(--down);
+    animation: none;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(63, 212, 154, 0.55); }
+    70% { box-shadow: 0 0 0 8px rgba(63, 212, 154, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(63, 212, 154, 0); }
+}
+
+.icon-btn {
+    display: inline-grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--muted);
+    cursor: pointer;
+}
+
+.icon-btn:hover {
+    color: var(--text);
+    border-color: var(--border-strong);
+}
+
+/* ---------- Hero ---------- */
+.hero {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px 32px;
+    margin-bottom: 22px;
+    padding: 20px 24px;
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) + 6px);
+    background:
+        linear-gradient(135deg, var(--gold-soft), transparent 45%),
+        var(--surface);
+    box-shadow: var(--shadow);
+}
+
+.hero-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 48px;
+}
+
+.hero-value {
+    margin-top: 4px;
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 2.8rem);
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+}
+
+.hero-stat:first-child .hero-value {
+    background: linear-gradient(90deg, var(--gold), var(--text) 140%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.hero-fiat {
+    margin-top: 2px;
+    color: var(--muted);
+    font-size: 1.05rem;
+}
+
+.holdings-stat {
+    display: none;
+    padding-left: 32px;
+    border-left: 1px solid var(--border);
+}
+
+body.holdings-on .holdings-stat {
+    display: block;
+}
+
+.hero-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.hero-controls-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.rate {
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.rate strong {
+    color: var(--text);
+}
+
+.segmented {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    padding: 3px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface-2);
+}
+
+.segmented a {
+    padding: 6px 12px;
+    border-radius: 9px;
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 600;
     text-decoration: none;
-    /* color: black; */
+    white-space: nowrap;
 }
 
+.segmented a:hover {
+    color: var(--text);
+}
 
+.segmented a[aria-pressed="true"] {
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
 
-.contact {
+.toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.toggle-btn:hover {
+    border-color: var(--gold);
+}
+
+.toggle-btn[aria-pressed="true"] {
+    border-color: var(--gold);
+    background: var(--gold-soft);
+    color: var(--gold);
+}
+
+/* ---------- Sections & grid ---------- */
+.section-title {
+    margin: 0 0 12px;
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(440px, 100%), 1fr));
+    gap: 14px;
+}
+
+/* ---------- Cards: compact rows so every collection fits on one screen ---------- */
+.card {
+    --rx: 0deg;
+    --ry: 0deg;
+    --gx: 50%;
+    --gy: 50%;
+    --media: 148px;
+    display: grid;
+    grid-template-columns: var(--media) minmax(0, 1fr);
+    gap: 16px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry));
+    transition: transform 0.5s ease, border-color 0.2s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    border-color: var(--border-strong);
+}
+
+/* While the pointer moves over a card, follow it closely (set by live.js) */
+.card.is-tilting {
+    transition: transform 0.08s linear, border-color 0.2s ease, box-shadow 0.3s ease;
+    box-shadow: var(--shadow), 0 0 0 1px var(--gold-soft), 0 20px 50px rgba(124, 77, 255, 0.18);
+}
+
+.card-media {
+    position: relative;
+    display: block;
+    align-self: start;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    border-radius: 12px;
+    background: var(--surface-2);
+}
+
+.card-media img,
+.card-media video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* The animation fades in over the poster once it is actually playing */
+.card-media video {
+    opacity: 0;
+    transition: opacity 0.6s ease;
+}
+
+.card-media video.is-playing {
+    opacity: 1;
+}
+
+/* Light reflection that follows the pointer */
+.glare {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: radial-gradient(circle at var(--gx) var(--gy), rgba(255, 255, 255, 0.28), transparent 60%);
+    opacity: 0;
+    mix-blend-mode: soft-light;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.card.is-tilting .glare {
+    opacity: 1;
+}
+
+.badge {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    z-index: 2;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: rgba(11, 8, 22, 0.7);
+    backdrop-filter: blur(6px);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    padding: 2px 4px 2px 0;
+}
+
+.card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.card-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.card-title a {
     text-decoration: none;
-    text-align: center;
-    color: var(--text-color-light);
-    /* default text color for light mode */
+}
 
-    /* Dark mode */
-    @media (prefers-color-scheme: dark) {
-        color: var(--text-color-dark);
-        /* text color for dark mode */
+.card-title a:hover {
+    color: var(--gold);
+}
+
+.card-title .icon {
+    margin-left: 2px;
+    opacity: 0.5;
+}
+
+.tag {
+    flex: none;
+    padding: 2px 8px;
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    color: var(--muted);
+    font-size: 0.7rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.floor-nft {
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 0.78rem;
+    text-decoration: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.floor-nft:hover {
+    color: var(--gold);
+}
+
+.floor-nft[hidden] {
+    display: none;
+}
+
+.floor-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px 10px;
+    margin-top: auto;
+}
+
+.floor {
+    display: inline-block;
+    margin: 0 -6px;
+    padding: 0 6px;
+    border-radius: 8px;
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.fiat {
+    margin-left: 4px;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.delta {
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    color: var(--muted);
+    font-size: 0.74rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.delta:empty {
+    display: none;
+}
+
+.delta.up {
+    background: var(--up-soft);
+    color: var(--up);
+}
+
+.delta.down {
+    background: var(--down-soft);
+    color: var(--down);
+}
+
+.meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 14px;
+    margin: 0;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+
+.meta div {
+    display: flex;
+    gap: 5px;
+}
+
+.meta dd {
+    margin: 0;
+    color: var(--text);
+    font-weight: 600;
+}
+
+/* Value flashes when a new price arrives */
+.flash-up {
+    animation: flash-up 1.6s ease;
+}
+
+.flash-down {
+    animation: flash-down 1.6s ease;
+}
+
+@keyframes flash-up {
+    0% { background: var(--up-soft); color: var(--up); }
+    100% { background: transparent; }
+}
+
+@keyframes flash-down {
+    0% { background: var(--down-soft); color: var(--down); }
+    100% { background: transparent; }
+}
+
+/* ---------- Holdings calculator ---------- */
+.holding {
+    display: none;
+    grid-column: 1 / -1;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    background: var(--surface-2);
+}
+
+body.holdings-on .holding {
+    display: flex;
+}
+
+.holding label {
+    color: var(--muted);
+    font-size: 0.82rem;
+}
+
+.stepper {
+    display: inline-flex;
+    align-items: center;
+    overflow: hidden;
+    border: 1px solid var(--border-strong);
+    border-radius: 9px;
+    background: var(--surface);
+}
+
+.stepper button {
+    width: 30px;
+    height: 30px;
+    border: 0;
+    background: transparent;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.stepper button:hover {
+    background: var(--surface-2);
+}
+
+.stepper input {
+    width: 44px;
+    height: 30px;
+    border: 0;
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    background: transparent;
+    text-align: center;
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.stepper input::-webkit-outer-spin-button,
+.stepper input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.holding-value {
+    margin-left: auto;
+    font-weight: 600;
+    font-size: 0.88rem;
+    text-align: right;
+}
+
+/* ---------- Footer ---------- */
+.footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 24px;
+    margin-top: 32px;
+    padding-top: 24px;
+    padding-bottom: 32px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.footer p {
+    margin: 0;
+}
+
+.footer nav {
+    display: flex;
+    gap: 18px;
+}
+
+.footer a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+}
+
+.footer a:hover {
+    color: var(--text);
+}
+
+/* ---------- Loading page ---------- */
+.loading {
+    display: grid;
+    place-items: center;
+    min-height: 100vh;
+    padding: 16px;
+    text-align: center;
+}
+
+.loading h1 {
+    margin: 16px 0 8px;
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+}
+
+.loading p {
+    margin: 6px 0;
+    color: var(--muted);
+}
+
+.loading a {
+    color: var(--gold);
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto;
+    border: 3px solid var(--border-strong);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ---------- Small screens ---------- */
+@media (max-width: 720px) {
+    .topbar {
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+
+    .hero {
+        gap: 12px;
+        margin-bottom: 16px;
+        padding: 16px;
+    }
+
+    .hero-stats {
+        gap: 12px 24px;
+    }
+
+    .hero-value {
+        font-size: 1.9rem;
+    }
+
+    .hero-controls {
+        align-items: stretch;
+        width: 100%;
+    }
+
+    .hero-controls-row {
+        justify-content: space-between;
+    }
+
+    .segmented a {
+        flex: 1;
+        text-align: center;
+    }
+
+    .holdings-stat {
+        padding-left: 24px;
+    }
+
+    .section-title {
+        display: none;
+    }
+
+    .grid {
+        gap: 10px;
+    }
+
+    .card {
+        --media: 104px;
+        gap: 12px;
+        padding: 10px;
+    }
+
+    .floor {
+        font-size: 1.25rem;
+    }
+
+    /* Saves a line per card; the thumbnail still links to the floor NFT */
+    .floor-nft {
+        display: none;
+    }
+
+    .fiat {
+        font-size: 0.82rem;
+    }
+
+    .brand-sub {
+        display: none;
+    }
+
+    .footer {
+        flex-direction: column;
+        align-items: flex-start;
     }
 }
 
-.card-header {
-    background-color: var(--card-header-color-light);
-    /* default card header color for light mode */
-
-    /* Dark mode */
-    @media (prefers-color-scheme: dark) {
-        background-color: var(--card-header-color-dark);
-        /* card header color for dark mode */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation: none !important;
+        transition: none !important;
     }
-}
-
-.nft-image {
-    background-repeat: no-repeat;
-    background-position: right;
-    background-size: 125px;
-    margin-right: 10px;
-}
-
-.currency {
-    /* text-align: center; */
-    margin-left: 20px;
-}
-
-.fa {
-    font-size: 13px;
-    opacity: 0.7;
 }

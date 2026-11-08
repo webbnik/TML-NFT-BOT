@@ -9,3 +9,8 @@ The bot also sends any floor updates to a discord server: https://discord.gg/WGY
 
 
 For any support or feedback, please open an Issue or contact me on Discord ^
+
+## Credits & licenses
+- **Font:** [Space Grotesk](https://github.com/floriankarsten/space-grotesk), self-hosted in `static/fonts/` under the SIL Open Font License 1.1 (see `static/fonts/OFL.txt`).
+- **Icons:** simple line icons drawn for this project (`templates/icons.svg`). No third-party icon set or front-end library is used.
+- **NFT artwork:** belongs to its respective owners (Tomorrowland). It is not stored in this repository; the app downloads the current floor NFT's artwork from IPFS at runtime and caches it in the `instance/` folder.

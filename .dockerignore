@@ -1,0 +1,8 @@
+# Hidden files and folders (.git, .github, .env, editor/tool settings, ...)
+.*
+venv
+instance
+migrations
+__pycache__
+*.pyc
+kubernetes

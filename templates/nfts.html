@@ -1,145 +1,152 @@
-<html lang="en" data-bs-theme="dark">
+{%- macro sol(value) -%}{{ '%.3f' | format(value) if value < 10 else '%.2f' | format(value) }} SOL{%- endmacro -%}
+{%- macro money(value) -%}{{ currency.sign }}{{ '%.2f' | format(value * currency.price) }}{%- endmacro -%}
+{%- macro icon(name, cls='icon') -%}<svg class="{{ cls }}" aria-hidden="true"><use href="#i-{{ name }}"></use></svg>{%- endmacro -%}
+{%- macro nft_card(nft) -%}
+{%- set floor_nft = nft.floor_nft -%}
+<article class="card" data-symbol="{{ nft.symbol }}">
+    <a class="card-media" data-media-link href="{{ floor_nft.url if floor_nft else nft.url }}" target="_blank" rel="noopener noreferrer" tabindex="-1">
+        <img data-media-image src="{{ floor_nft.image if floor_nft and floor_nft.image else nft.image }}" alt="{{ floor_nft.name if floor_nft else nft.name }}" decoding="async">
+        <video data-media-video muted loop playsinline preload="none" aria-hidden="true" {% if floor_nft and floor_nft.video %}data-src="{{ floor_nft.video }}"{% endif %}></video>
+        <span class="glare" aria-hidden="true"></span>
+        {% if nft.order %}<span class="badge">#{{ nft.order }}</span>{% endif %}
+    </a>
+    <div class="card-body">
+        <div class="card-head">
+            <h3 class="card-title">
+                <a href="{{ nft.url }}" target="_blank" rel="noopener noreferrer">{{ nft.name }} {{ icon('external', 'icon icon-sm') }}</a>
+            </h3>
+            {% if not nft.include_in_total %}<span class="tag" title="Not part of the full set total">Not in set</span>{% endif %}
+        </div>
+        <a class="floor-nft" data-media-link data-media-caption href="{{ floor_nft.url if floor_nft else nft.url }}" target="_blank" rel="noopener noreferrer" {% if not floor_nft %}hidden{% endif %}>
+            Floor NFT: <span data-media-name>{{ floor_nft.name if floor_nft }}</span>
+        </a>
+
+        <div class="floor-row">
+            <div>
+                <span class="floor" data-field="floor">{{ sol(nft.floor) }}</span>
+                <span class="fiat" data-field="floor-fiat">{{ money(nft.floor) }}</span>
+            </div>
+            <span class="delta" data-field="delta" title="Floor compared to the 24h average sale price"></span>
+        </div>
+
+        <dl class="meta">
+            <div><dt>Listed</dt><dd data-field="listed">{{ nft.listed }}</dd></div>
+            <div><dt>24h avg</dt><dd data-field="avg24h">{{ sol(nft.avg24h) }}</dd></div>
+        </dl>
+    </div>
+
+    <div class="holding">
+        <label for="qty-{{ nft.symbol }}">I own</label>
+        <div class="stepper">
+            <button type="button" data-step="-1" aria-label="Remove one">&minus;</button>
+            <input id="qty-{{ nft.symbol }}" type="number" inputmode="numeric" min="0" step="1" value="0" data-qty>
+            <button type="button" data-step="1" aria-label="Add one">+</button>
+        </div>
+        <span class="holding-value" data-field="holding-value"></span>
+    </div>
+</article>
+{%- endmacro -%}
+<!DOCTYPE html>
+<html lang="en">
 
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Stylesheets -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link href="{{ url_for('static', filename='css/dist/bootstrap.min.css') }}" rel="stylesheet" />
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ sol(state.total_floor) }} · Tomorrowland NFTs</title>
+    <meta name="description" content="Live floor prices for the Tomorrowland Medallion NFT collections on Magic Eden.">
+    <meta name="theme-color" content="#0b0816">
 
-    <link href="{{ url_for('static', filename='css/nft.css') }}" rel="stylesheet" />
+    <!-- Apply the saved theme before the page paints to avoid a flash -->
+    <script>
+        try {
+            const theme = JSON.parse(localStorage.getItem('tml.theme'));
+            if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+        } catch (e) { }
+    </script>
 
+    <link rel="preload" href="{{ url_for('static', filename='fonts/SpaceGrotesk-latin.woff2') }}" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/nft.css') }}">
 
-    <!-- JavaScripts -->
-    <script src="{{ url_for('static', filename='js/dist/jquery.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/dist/bootstrap.bundle.min.js') }}"></script>
-
-    <script src="{{ url_for('static', filename='js/bootstrap_darkmode_selector.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/calculate_fields_init.js') }}"></script>
-
-    <title>Tomorrowland NFTs</title>
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.ico')}}">
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='favicon/apple-touch-icon.png')}}">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon/favicon-32x32.png')}}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon/favicon-16x16.png')}}">
-    <link rel="manifest" href="{{ url_for('static', filename='favicon/site.webmanifest')}}">
+    <link rel="icon" href="{{ url_for('static', filename='favicon/favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon/favicon-16x16.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='favicon/apple-touch-icon.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='favicon/site.webmanifest') }}">
 </head>
 
-<body>
-    {% for nft in nfts | sort(attribute='order') %}
-    {% if nft.order != 0 and nft.order != 9999 %}
-    <div class="col-lg-4 col-md-12 col-sm-12 card-container {{ nft.symbol }}">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="card-title"><a href="https://magiceden.io/marketplace/{{ nft.symbol }}" target="_blank" class="card-link">{{ nft.name }} <i class="fa fa-external-link" aria-hidden="true"></i></a></h5>
-                <h6>#{{ nft.order }}</h6>
-            </div>
-            <div class="card-body nft-image" style="background-image: url('{{ nft.image }}');">
-                <p class="card-text">Floor: <b>{{ '%.3f' | format(nft.floorPrice / 1000000000) }} SOL</b> ({{ '%.2f' | format(nft.floorPrice / 1000000000 * currency.price) }}{{ currency.sign }})</p>
-                <p class="card-text">Listed: {{ nft.listedCount }} pcs</p>
-                <p class="card-text">Average 24h: {{ '%.3f' | format(nft.avgPrice24hr / 1000000000) }} SOL</p>
+<body data-currency="{{ currency.symbol }}">
+    {% include 'icons.svg' %}
 
-                <div class="calculator-fields">
-                    <input type="number" class="nft-quantity" data-floor-price="{{ nft.floorPrice }}" data-currency-price="{{ currency.price }}" value="0">
-                </div>
+    <header class="topbar">
+        <div class="brand">
+            <img src="{{ url_for('static', filename='favicon/favicon-32x32.png') }}" alt="" width="28" height="28">
+            <div>
+                <div class="brand-name">Tomorrowland NFTs</div>
+                <div class="brand-sub">Medallion floor tracker</div>
             </div>
         </div>
-    </div>
-    {% endif %}
-    {% endfor %}
-
-    <div class="col-lg-4 col-md-12 col-sm-12 card-container floorprice">
-        <div class="card">
-            <div class="card-body">
-                <p class="card-text totalFloor">Total: <b>{{ '%.3f' | format(total_floor_price / 1000000000) }} SOL</b> (<span>{{ '%.3f' | format(total_floor_price / 1000000000 * currency.price) }}</span>{{ currency.sign }})
-                    <br><span class="date">{{ nftfetched.fetched.strftime('%d-%m-%Y %H:%M:%S') }} UTC</span>
-                </p>
-
-                <p class="card-text calculatedFloor" style="display: none;">Calculated: <b id="total-sol-amount">0 SOL</b> (<span id="total-currency-amount">0</span>{{ currency.sign }})
-                    <br><span class="date">{{ nftfetched.fetched.strftime('%d-%m-%Y %H:%M:%S') }} UTC</span>
-                </p>
-
-                <p class="card-text">1 SOL = <b>{{ '%.3f' | format(currency.price) }}{{ currency.sign }}</b>
-                    <br><span class="date">{{ currency.fetched.strftime('%d-%m-%Y %H:%M:%S') }} UTC</span>
-                </p>
-
-                <div class="btn-group dropup-center">
-                    <button type="button" id="theme" class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Theme</button>
-                    <div class="dropdown-menu dropdownitems" aria-labelledby="theme">
-                        <a class="dropdown-item" data-bs-theme-value="light" href="#">Light</a>
-                        <a class="dropdown-item" data-bs-theme-value="dark" href="#">Dark</a>
-                        <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" data-bs-theme-value="auto" href="#">Auto</a>
-                    </div>
-                </div>
-
-                <div class="btn-group dropup-center">
-                    <button type="button" id="currency" class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Currency</button>
-                    <div class="dropdown-menu dropdownitems" aria-labelledby="currency">
-                        {% for currency in currencies %}
-                        <a href="?currency={{ currency.symbol }}" class="dropdown-item">{{ currency.sign }} - {{ currency.name|upper }}</a>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                <div class="btn-group dropup-center">
-                    <button type="button" id="options" class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Options</button>
-                    <div class="dropdown-menu dropdownitems" aria-labelledby="options">
-                        <a href="#" class="dropdown-item enable-calculator-link" id="toggle-calculator" onclick="toggleCalculator()">Show calculator</a>
-                        <a href="#" class="dropdown-item" id="toggle-link" onclick="toggleNFTCards(event)">Show collectibles</a>
-                    </div>
-                </div>
-
-            </div>
+        <div class="topbar-actions">
+            <span class="status" data-status title="Prices refresh automatically">
+                <span class="status-dot"></span>
+                <span data-status-text>Live</span>
+            </span>
+            <button type="button" class="icon-btn" data-theme-toggle aria-label="Change theme">
+                {{ icon('theme-auto') }}
+            </button>
         </div>
-    </div>
+    </header>
 
-    <div id="nft-cards-container" style="display: none;">
-        {% for nft in nfts | sort(attribute='order') %}
-        {% if nft.order == 0 %}
-        <div class="col-lg-4 col-md-12 col-sm-12 card-container {{ nft.symbol }}">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title"><a href="https://magiceden.io/marketplace/{{ nft.symbol }}" target="_blank" class="card-link">{{ nft.name }} <i class="fa fa-external-link" aria-hidden="true"></i></a></h5>
-                    <h6>#{{ nft.order }}</h6>
+    <main>
+        <section class="hero" aria-label="Summary">
+            <div class="hero-stats">
+                <div class="hero-stat">
+                    <div class="label">Full set floor <span class="hint">one of each collection</span></div>
+                    <div class="hero-value" data-total-sol>{{ sol(state.total_floor) }}</div>
+                    <div class="hero-fiat" data-total-fiat>{{ money(state.total_floor) }}</div>
                 </div>
-                <div class="card-body nft-image" style="background-image: url('{{ nft.image }}');">
-                    <p class="card-text">Floor: <b>{{ '%.3f' | format(nft.floorPrice / 1000000000) }} SOL</b> ({{ '%.2f' | format(nft.floorPrice / 1000000000 * currency.price) }}{{ currency.sign }})</p>
-                    <p class="card-text">Listed: {{ nft.listedCount }} pcs</p>
-                    <p class="card-text">Average 24h: {{ '%.3f' | format(nft.avgPrice24hr / 1000000000) }} SOL</p>
-
-                    <!-- Calculator fields for each NFT -->
-                    <div class="calculator-fields">
-                        <input type="number" class="nft-quantity" data-floor-price="{{ nft.floorPrice }}" data-currency-price="{{ currency.price }}" value="0">
-                    </div>
+                <div class="hero-stat holdings-stat">
+                    <div class="label">My holdings <span class="hint" data-holdings-count></span></div>
+                    <div class="hero-value" data-holdings-sol>0 SOL</div>
+                    <div class="hero-fiat" data-holdings-fiat></div>
                 </div>
             </div>
-        </div>
-        {% endif %}
-        {% endfor %}
-    </div>
-<div class="col-lg-4 col-md-12 col-sm-12 card-container contact">
-    <b>Feedback or contact?</b><br>
-    <a href="https://discord.gg/WGYaCcApvQ"
-       class="contact"
-       target="_blank"
-       rel="noopener noreferrer">
-        Discord <i class="fa-brands fa-discord" aria-hidden="true"></i>
-    </a> -
-    <a href="https://github.com/webbnik/TML-NFT-BOT"
-       class="contact"
-       target="_blank"
-       rel="noopener noreferrer">
-        GitHub <i class="fa-brands fa-github" aria-hidden="true"></i>
-    </a> -
-    <a href="https://links.hardy.se/"
-       class="contact"
-       target="_blank"
-       rel="noopener noreferrer">
-        All links <i class="fa-solid fa-link" aria-hidden="true"></i>
-    </a>
-</div>
 
-    <script src="{{ url_for('static', filename='js/calculate_fields.js') }}"></script>
+            <div class="hero-controls">
+                <div class="segmented" role="group" aria-label="Currency">
+                    {% for c in state.currencies %}
+                    <a href="?currency={{ c.symbol }}" data-currency="{{ c.symbol }}" title="{{ c.name }}"
+                        aria-pressed="{{ 'true' if c.symbol == currency.symbol else 'false' }}">{{ c.sign }} {{ c.symbol | replace('SOL', '', 1) }}</a>
+                    {% endfor %}
+                </div>
+                <div class="hero-controls-row">
+                    <div class="rate">1 SOL = <strong data-rate>{{ currency.sign }}{{ '%.2f' | format(currency.price) }}</strong></div>
+                    <button type="button" class="toggle-btn" data-holdings-toggle aria-pressed="false">
+                        {{ icon('calculator') }} My holdings
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section aria-labelledby="collections-title">
+            <h2 class="section-title" id="collections-title">Collections</h2>
+            <div class="grid">
+                {% for nft in state.nfts if nft.order != 0 %}{{ nft_card(nft) }}{% endfor %}
+                {% for nft in state.nfts if nft.order == 0 %}{{ nft_card(nft) }}{% endfor %}
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>Floor prices from Magic Eden, exchange rates from Binance. Artwork shows the cheapest listed NFT of each collection. NFT artwork &copy; its respective owners.</p>
+        <nav aria-label="Contact">
+            <a href="https://discord.gg/WGYaCcApvQ" target="_blank" rel="noopener noreferrer">{{ icon('chat') }} Discord</a>
+            <a href="https://github.com/webbnik/TML-NFT-BOT" target="_blank" rel="noopener noreferrer">{{ icon('code') }} GitHub</a>
+            <a href="https://links.hardy.se/" target="_blank" rel="noopener noreferrer">{{ icon('link') }} All links</a>
+        </nav>
+    </footer>
+
+    <script id="initial-state" type="application/json">{{ state | tojson }}</script>
+    <script src="{{ url_for('static', filename='js/live.js') }}"></script>
 </body>
 
 </html>

@@ -19,7 +19,7 @@ jobs:
     name: Checkout code and build container
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
 
       - name: Build containers from Dockerfile and run tests
         run: |

@@ -1,22 +1,23 @@
-FROM python:slim-buster
+FROM python:3.13-slim
 
-RUN apt update && apt install -y nano sqlite3
+ENV PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
-RUN groupadd --gid 5005 pythongroup
-RUN useradd --uid 5060 --gid pythongroup --home /app pythonuser
-
-RUN mkdir /app
+RUN groupadd --gid 5005 pythongroup && \
+    useradd --uid 5060 --gid pythongroup --home /app pythonuser && \
+    mkdir -p /app/instance && chown -R pythonuser:pythongroup /app
 
 WORKDIR /app
 
-COPY . .
+# Install dependencies first so this layer is cached between code changes
+COPY requirements.txt .
+RUN pip install -r requirements.txt
 
-RUN chown -R pythonuser.pythongroup /app
-
-RUN pip3 install -r requirements.txt
+COPY --chown=pythonuser:pythongroup . .
 
 USER pythonuser
 
 EXPOSE 8000
 
-CMD ["bash", "-c", "flask db init || true && flask db migrate && flask db upgrade && gunicorn -b 0.0.0.0:8000 --statsd-host=statsd-exporter-service:9125 --statsd-prefix=tml_nft_bot -w 2 --timeout 10 --preload app:app"]
+CMD ["gunicorn", "-b", "0.0.0.0:8000", "--statsd-host=statsd-exporter-service:9125", "--statsd-prefix=tml_nft_bot", "-w", "2", "--timeout", "10", "--preload", "app:app"]
