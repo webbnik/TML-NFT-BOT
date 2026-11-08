@@ -74,3 +74,15 @@ def test_api_history(seeded, client):
     # The 10-day-old row is outside the 7-day window
     assert [value for _, value in series] == [5, 6]
     assert series[0][0].endswith("Z")
+
+
+def test_icons_and_manifest(seeded, client):
+    html = client.get("/").get_data(as_text=True)
+    assert 'rel="apple-touch-icon"' in html and "apple-touch-icon.png?v=" in html
+    assert client.get("/apple-touch-icon.png").mimetype == "image/png"
+    assert client.get("/favicon.ico").status_code == 200
+    assert client.get("/static/img/logo.svg").mimetype == "image/svg+xml"
+    manifest = client.get("/static/favicon/site.webmanifest")
+    assert manifest.mimetype == "application/manifest+json"
+    for icon in manifest.get_json()["icons"]:
+        assert client.get(icon["src"]).status_code == 200
