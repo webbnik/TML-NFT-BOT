@@ -4,6 +4,7 @@ import re
 import time
 import hashlib
 import logging
+import mimetypes
 import requests
 from dotenv import load_dotenv
 from flask_sqlalchemy import SQLAlchemy
@@ -26,6 +27,10 @@ db.init_app(app)
 
 if os.getenv("FLASK_ENV") == "development":
     load_dotenv()
+
+# Not known on every system; browsers need the right type (we send nosniff)
+mimetypes.add_type("application/manifest+json", ".webmanifest")
+mimetypes.add_type("image/svg+xml", ".svg")
 
 
 # Hosts of the fallback collection images configured in fetch_magiceden().
@@ -112,7 +117,7 @@ def discord_webhook(nft, current_floorprice, listedcount, webhooks):
     upordowngraphic = "https://nft.hardy.se/static/img/increase.png" if upordown == "increased" else "https://nft.hardy.se/static/img/decrease.png"
     payload = {
         "username": "NFT",
-        "avatar_url": "https://i.imgur.com/4M34hi2.png",
+        "avatar_url": "https://nft.hardy.se/static/favicon/android-chrome-512x512.png",
         "embeds": [
             {
                 "title": f"{nft.name}",
@@ -577,6 +582,15 @@ def api_prices():
     response = jsonify(state)
     response.headers["Cache-Control"] = "no-store"
     return response
+
+
+@app.route("/favicon.ico", methods=['GET'])
+@app.route("/apple-touch-icon.png", methods=['GET'])
+@app.route("/apple-touch-icon-precomposed.png", methods=['GET'])
+def root_icons():
+    """Browsers and iOS look for these at the site root before reading the page."""
+    filename = "favicon.ico" if request.path == "/favicon.ico" else "apple-touch-icon.png"
+    return send_from_directory(os.path.join(app.static_folder, "favicon"), filename, max_age=86400)
 
 
 @app.route("/media/<path:filename>", methods=['GET'])

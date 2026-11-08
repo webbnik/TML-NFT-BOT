@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Tomorrowland NFTs">
+    <!-- Original logo for this project: a gold medallion ring with a four-point sparkle.
+         PNG icons in static/favicon/ are generated from the same shapes by tools/make_icons.py -->
+    <defs>
+        <radialGradient id="bg" cx="50%" cy="35%" r="75%">
+            <stop offset="0" stop-color="#3a2378" />
+            <stop offset="1" stop-color="#0b0816" />
+        </radialGradient>
+        <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#f7dc8b" />
+            <stop offset="0.5" stop-color="#e3b75b" />
+            <stop offset="1" stop-color="#a8761a" />
+        </linearGradient>
+    </defs>
+    <rect width="64" height="64" rx="14" fill="url(#bg)" />
+    <circle cx="32" cy="32" r="21" fill="none" stroke="url(#gold)" stroke-width="3.5" />
+    <path d="M32 15C33.6 26.4 37.6 30.4 49 32C37.6 33.6 33.6 37.6 32 49C30.4 37.6 26.4 33.6 15 32C26.4 30.4 30.4 26.4 32 15Z" fill="url(#gold)" />
+</svg>

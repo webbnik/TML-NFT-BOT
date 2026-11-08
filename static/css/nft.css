@@ -184,6 +184,7 @@ main,
 }
 
 .brand-name {
+    white-space: nowrap;
     font-family: var(--font-display);
     font-weight: 700;
     font-size: 1.05rem;
@@ -214,7 +215,14 @@ main,
     white-space: nowrap;
 }
 
+/* Fixed width for the "40s ago" part so the pill does not jump every second */
+.status-age {
+    display: inline-block;
+    min-width: 7ch;
+}
+
 .status-dot {
+    flex: none;
     width: 8px;
     height: 8px;
     border-radius: 50%;
@@ -851,6 +859,23 @@ body.holdings-on .holding {
     }
 
     .brand-sub {
+        display: none;
+    }
+
+    .brand-name {
+        font-size: 0.98rem;
+    }
+
+    .status {
+        gap: 6px;
+        padding: 6px 10px;
+    }
+
+    /* Live: just "40s ago" (the green dot says live). Delayed/Offline: just the word. */
+    .status-sep,
+    .status:not(.is-stale):not(.is-offline) .status-label,
+    .status.is-stale .status-age,
+    .status.is-offline .status-age {
         display: none;
     }
 

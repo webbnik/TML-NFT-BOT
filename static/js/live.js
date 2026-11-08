@@ -229,10 +229,11 @@
         el.classList.toggle('is-offline', pollFailed);
         el.classList.toggle('is-stale', !pollFailed && stale);
         let text;
-        if (pollFailed) text = `Offline · ${formatAgo(age)}`;
-        else if (stale) text = `Delayed · ${formatAgo(age)}`;
-        else text = `Live · ${formatAgo(age)}`;
-        setText($('[data-status-text]'), text);
+        if (pollFailed) text = 'Offline';
+        else if (stale) text = 'Delayed';
+        else text = 'Live';
+        setText($('[data-status-label]'), text);
+        setText($('[data-status-age]'), formatAgo(age));
         el.title = `Prices last fetched ${new Date(state.updated).toLocaleString()}`;
     }
 

@@ -54,17 +54,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ sol(state.total_floor) }} · Tomorrowland NFTs</title>
     <meta name="description" content="Live floor prices for the Tomorrowland Medallion NFT collections on Magic Eden.">
-    <meta name="theme-color" content="#0b0816">
 
     <script src="{{ asset('js/theme-init.js') }}"></script>
 
     <link rel="stylesheet" href="{{ asset('css/nft.css') }}">
 
-    <link rel="icon" href="{{ url_for('static', filename='favicon/favicon.ico') }}">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon/favicon-32x32.png') }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon/favicon-16x16.png') }}">
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='favicon/apple-touch-icon.png') }}">
-    <link rel="manifest" href="{{ url_for('static', filename='favicon/site.webmanifest') }}">
+{% include '_head_icons.html' %}
 </head>
 
 <body data-currency="{{ currency.symbol }}">
@@ -72,7 +67,7 @@
 
     <header class="topbar">
         <div class="brand">
-            <img src="{{ url_for('static', filename='favicon/favicon-32x32.png') }}" alt="" width="28" height="28">
+            <img src="{{ asset('img/logo.svg') }}" alt="" width="32" height="32">
             <div>
                 <div class="brand-name">Tomorrowland NFTs</div>
                 <div class="brand-sub">Medallion floor tracker</div>
@@ -81,7 +76,7 @@
         <div class="topbar-actions">
             <span class="status" data-status title="Prices refresh automatically">
                 <span class="status-dot"></span>
-                <span data-status-text>Live</span>
+                <span class="status-text"><span class="status-label" data-status-label>Live</span><span class="status-sep"> · </span><span class="status-age" data-status-age></span></span>
             </span>
             <button type="button" class="icon-btn" data-theme-toggle aria-label="Change theme">
                 {{ icon('theme-auto') }}
