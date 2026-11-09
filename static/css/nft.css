@@ -874,6 +874,12 @@ a.spark:hover {
     font-weight: 600;
 }
 
+.chart-title .hint {
+    margin-left: 4px;
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+
 .chart-title h2 a {
     text-decoration: none;
 }

@@ -55,6 +55,18 @@
         </section>
 
         <div class="chart-list">
+            <article class="chart-card" id="full-set" data-symbol="full-set">
+                <div class="chart-head">
+                    <img src="{{ asset('img/logo.svg') }}" alt="" width="44" height="44">
+                    <div class="chart-title">
+                        <h2>Full set floor <span class="hint">one of each collection</span></h2>
+                        <div class="chart-summary"><strong data-chart-last></strong> <span class="delta" data-chart-change></span></div>
+                    </div>
+                </div>
+                <div class="chart" data-chart>
+                    <div class="chart-empty" data-chart-empty>Collecting data… The chart appears once a few points have been recorded.</div>
+                </div>
+            </article>
             {% for nft in (state.nfts | selectattr('order', 'ne', 0) | list) + (state.nfts | selectattr('order', 'equalto', 0) | list) %}
             <article class="chart-card" id="{{ nft.symbol }}" data-symbol="{{ nft.symbol }}">
                 <div class="chart-head">

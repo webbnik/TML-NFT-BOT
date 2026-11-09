@@ -64,13 +64,32 @@
         return rates[lo][1];
     }
 
-    function seriesFor(nft) {
+    // Floor history of one collection in SOL, ending at the current live floor
+    function solSeries(nft) {
         const since = Date.now() - days * 86400 * 1000;
-        let points = toPoints(data.history[nft.symbol]);
-        // End the line at the current live floor
+        const points = toPoints(data.history[nft.symbol]);
         const live = Date.parse(nft.fetched);
         if (!Number.isNaN(live) && live >= since) points.push([live, nft.floor]);
-        points = points.filter(([time]) => time >= since);
+        return points.filter(([time]) => time >= since);
+    }
+
+    // Full set: the sum of each included collection's floor at every point in time,
+    // starting once every collection has a recorded floor
+    function fullSetSeries() {
+        const parts = state.nfts.filter(nft => nft.include_in_total).map(solSeries);
+        if (!parts.length || parts.some(p => !p.length)) return [];
+        const start = Math.max(...parts.map(p => p[0][0]));
+        const times = [...new Set(parts.flatMap(p => p.map(([time]) => time)))]
+            .filter(time => time >= start)
+            .sort((a, b) => a - b);
+        const index = parts.map(() => 0);
+        return times.map(time => [time, parts.reduce((sum, part, i) => {
+            while (index[i] < part.length - 1 && part[index[i] + 1][0] <= time) index[i]++;
+            return sum + part[index[i]][1];
+        }, 0)]);
+    }
+
+    function inUnit(points) {
         if (unit === 'SOL') return points;
         const current = state.currencies.find(c => c.symbol === unit).price;
         const rates = toPoints((data.rates || {})[unit]);
@@ -156,11 +175,13 @@
         if (!data) return;
 
         let earliest = Infinity;
-        state.nfts.forEach(nft => {
-            const card = $(`.chart-card[data-symbol="${CSS.escape(nft.symbol)}"]`);
+        const charts = [{ symbol: 'full-set', points: fullSetSeries() }]
+            .concat(state.nfts.map(nft => ({ symbol: nft.symbol, points: solSeries(nft) })));
+        charts.forEach(chart => {
+            const card = $(`.chart-card[data-symbol="${CSS.escape(chart.symbol)}"]`);
             if (!card) return;
             const box = $('[data-chart]', card);
-            const points = seriesFor(nft);
+            const points = inUnit(chart.points);
             const change = $('[data-chart-change]', card);
             if (points.length < 3) {
                 box.replaceChildren(div('chart-empty', 'Collecting data… The chart appears once a few points have been recorded.'));

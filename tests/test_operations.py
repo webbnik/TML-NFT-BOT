@@ -71,5 +71,7 @@ def test_api_history_with_rates(seeded, client):
 def test_history_page(seeded, client):
     response = client.get("/history")
     assert response.status_code == 200
-    assert "Price history" in response.get_data(as_text=True)
+    page = response.get_data(as_text=True)
+    assert "Price history" in page
+    assert 'id="full-set"' in page
     assert "Strict-Transport-Security" in response.headers
