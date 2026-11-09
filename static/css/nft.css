@@ -304,9 +304,20 @@ main,
 }
 
 .hero-fiat {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
     margin-top: 2px;
     color: var(--muted);
     font-size: 1.05rem;
+}
+
+/* Full set trend line beside the "vs 24h" badge */
+.hero-fiat .spark-total {
+    width: 72px;
+    height: 20px;
+    margin-left: 0;
 }
 
 .holdings-stat {

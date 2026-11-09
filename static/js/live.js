@@ -91,6 +91,7 @@
 
         setText($('[data-total-sol]'), formatSol(state.total_floor));
         setText($('[data-total-fiat]'), formatMoney(state.total_floor));
+        renderSpark($('[data-total-spark]'), fullSetPoints(), 'full set floor');
         // Only when every collection in the set has 24h sales to compare with
         const inSet = state.nfts.filter(nft => nft.include_in_total);
         setDelta($('[data-total-delta]'), state.total_floor,
@@ -123,7 +124,7 @@
             setDelta(field('delta'), nft.floor, nft.avg24h);
 
             renderMedia(card, nft);
-            $$('[data-spark]', card).forEach(el => renderSpark(el, nft));
+            $$('[data-spark]', card).forEach(el => renderSpark(el, sparkPoints(nft)));
 
             const qty = holdings[nft.symbol] || 0;
             const input = $('[data-qty]', card);
@@ -152,12 +153,30 @@
         return el;
     }
 
-    function renderSpark(el, nft) {
-        // Stored history plus the current live floor, so the line ends "now"
-        const points = (floorHistory[nft.symbol] || []).concat([[nft.fetched, nft.floor]])
-            .map(([time, value]) => [Date.parse(time), value])
-            .filter(([time]) => !Number.isNaN(time))
-            .sort((a, b) => a[0] - b[0]);
+    // Stored history plus the current live floor, so the line ends "now"
+    const sparkPoints = nft => (floorHistory[nft.symbol] || []).concat([[nft.fetched, nft.floor]])
+        .map(([time, value]) => [Date.parse(time), value])
+        .filter(([time]) => !Number.isNaN(time))
+        .sort((a, b) => a[0] - b[0]);
+
+    // Full set: the sum of each collection's floor at every point in time,
+    // starting once every collection in the set has a recorded floor
+    function fullSetPoints() {
+        const parts = state.nfts.filter(nft => nft.include_in_total).map(sparkPoints);
+        if (!parts.length || parts.some(p => !p.length)) return [];
+        const start = Math.max(...parts.map(p => p[0][0]));
+        const times = [...new Set(parts.flatMap(p => p.map(([time]) => time)))]
+            .filter(time => time >= start)
+            .sort((a, b) => a - b);
+        const index = parts.map(() => 0);
+        return times.map(time => [time, parts.reduce((sum, part, i) => {
+            while (index[i] < part.length - 1 && part[index[i] + 1][0] <= time) index[i]++;
+            return sum + part[index[i]][1];
+        }, 0)]);
+    }
+
+    function renderSpark(el, points, what = 'floor') {
+        if (!el) return;
         if (points.length < 3) {
             el.hidden = true; // not enough data collected yet
             return;
@@ -183,7 +202,7 @@
         el.classList.toggle('up', change > 0.05);
         el.classList.toggle('down', change < -0.05);
         const since = new Date(t0).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
-        const label = `${HISTORY_DAYS}-day floor trend: ${change >= 0 ? '+' : ''}${number(change, 1)}% (since ${since})`;
+        const label = `${HISTORY_DAYS}-day ${what} trend: ${change >= 0 ? '+' : ''}${number(change, 1)}% (since ${since})`;
         el.title = label;
         el.setAttribute('role', 'img');
         el.setAttribute('aria-label', label);
