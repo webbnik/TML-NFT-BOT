@@ -33,10 +33,10 @@
         value.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
     const CRYPTO_DECIMALS = { SOLETH: 4, SOLBTC: 5 };
 
-    function formatValue(value) {
-        if (unit === 'SOL') return `${number(value, value < 10 ? 3 : 2)} SOL`;
-        const currency = state.currencies.find(c => c.symbol === unit);
-        const decimals = CRYPTO_DECIMALS[unit] ?? (Math.abs(value) >= 1000 ? 0 : 2);
+    function formatValue(value, as = unit) {
+        if (as === 'SOL') return `${number(value, value < 10 ? 3 : 2)} SOL`;
+        const currency = state.currencies.find(c => c.symbol === as);
+        const decimals = CRYPTO_DECIMALS[as] ?? (Math.abs(value) >= 1000 ? 0 : 2);
         return `${currency.sign}${number(value, decimals)}`;
     }
 
@@ -100,7 +100,18 @@
         const t0 = solPoints[0][0], t1 = solPoints[solPoints.length - 1][0];
         const base = solPoints[0][1];
         const times = [t0, ...rates.map(([time]) => time).filter(time => time > t0 && time < t1), t1];
-        return { rates, current, points: times.map(time => [time, base * rateAt(rates, time, current)]) };
+        return { symbol: unit, rates, current, points: times.map(time => [time, base * rateAt(rates, time, current)]) };
+    }
+
+    // In SOL view the tooltip shows what 1 SOL was worth in money: the currency picked
+    // on the live prices page when it is a fiat one, otherwise USDT
+    function moneyRate() {
+        if (unit !== 'SOL') return null;
+        const saved = store.get('tml.currency', null);
+        const symbol = ['SOLUSDT', 'SOLEUR'].includes(saved) ? saved : 'SOLUSDT';
+        const currency = state.currencies.find(c => c.symbol === symbol);
+        const rates = toPoints((data.rates || {})[symbol]);
+        return currency ? { symbol, rates, current: currency.price } : null;
     }
 
     function inUnit(points) {
@@ -124,7 +135,7 @@
         return el;
     }
 
-    function drawChart(box, points, sol) {
+    function drawChart(box, points, sol, tipRate) {
         const t0 = points[0][0], t1 = points[points.length - 1][0];
         const values = points.map(p => p[1]).concat(sol ? sol.points.map(p => p[1]) : []);
         let min = Math.min(...values), max = Math.max(...values);
@@ -177,11 +188,16 @@
             cursor.style.setProperty('left', left);
             dot.style.setProperty('left', left);
             dot.style.setProperty('top', `${y(value) / H * 100}%`);
-            const solPrice = sol ? ` · 1 SOL ${formatValue(rateAt(sol.rates, time, sol.current))}` : '';
+            const solPrice = tipRate
+                ? ` · 1 SOL ${formatValue(rateAt(tipRate.rates, time, tipRate.current), tipRate.symbol)}` : '';
             tip.textContent = `${formatValue(value)}${solPrice} · ${formatTime(time, true)}`;
-            tip.style.setProperty('left', left);
-            tip.classList.toggle('flip', fraction > 0.6);
             [cursor, dot, tip].forEach(el => { el.hidden = false; });
+            // Beside the cursor where it fits, otherwise as close as possible inside the chart
+            const width = box.clientWidth, tipWidth = tip.offsetWidth, at = fraction * width;
+            let tipLeft = at + 8;
+            if (tipLeft + tipWidth > width) tipLeft = at - 8 - tipWidth;
+            if (tipLeft < 0) tipLeft = Math.min(Math.max(at - tipWidth / 2, 0), Math.max(width - tipWidth, 0));
+            tip.style.setProperty('left', `${tipLeft}px`);
         }
         const hide = () => [cursor, dot, tip].forEach(el => { el.hidden = true; });
         box.onpointermove = event => showAt(event.clientX);
@@ -214,7 +230,7 @@
                 return;
             }
             earliest = Math.min(earliest, points[0][0]);
-            drawChart(box, points, sol);
+            drawChart(box, points, sol, sol || moneyRate());
 
             const first = points[0][1], last = points[points.length - 1][1];
             const pct = first ? (last - first) / first * 100 : 0;

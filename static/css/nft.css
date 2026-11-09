@@ -1037,11 +1037,7 @@ a.spark:hover {
     font-weight: 600;
     white-space: nowrap;
     pointer-events: none;
-    transform: translate(8px, -100%);
-}
-
-.chart-tip.flip {
-    transform: translate(calc(-100% - 8px), -100%);
+    transform: translateY(-100%);
 }
 
 .chart-cursor[hidden],
