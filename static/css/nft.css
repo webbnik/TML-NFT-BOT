@@ -1119,11 +1119,21 @@ a.spark:hover {
     }
 
     .hero-stats {
+        width: 100%;
         gap: 12px 24px;
+    }
+
+    .hero-stat:first-child {
+        flex: 1 1 auto;
     }
 
     .hero-value {
         font-size: 1.9rem;
+    }
+
+    /* Badge and trend line on the right, like on the collection cards */
+    .hero-fiat [data-total-delta] {
+        margin-left: auto;
     }
 
     .hero-controls {
