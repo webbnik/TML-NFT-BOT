@@ -51,6 +51,11 @@
                     <a href="#" data-unit="{{ c.symbol }}" title="{{ c.name }}, converted with the exchange rate at each point in time" aria-pressed="false">{{ c.sign }} {{ c.symbol | replace('SOL', '', 1) }}</a>
                     {% endfor %}
                 </div>
+                <div class="segmented" role="group" aria-label="Compare" data-sol-line-group hidden>
+                    <a href="#" data-sol-line aria-pressed="true"
+                        title="SOL's own price, starting from the same point as the floor. The gap between the lines is the floor's own change in SOL.">
+                        <span class="legend-dash" aria-hidden="true"></span> SOL price</a>
+                </div>
             </div>
         </section>
 

@@ -942,6 +942,28 @@ a.spark:hover {
     opacity: 0.1;
 }
 
+/* SOL's own price, for comparison when showing another currency */
+.chart .sol-line {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1.5;
+    stroke-dasharray: 5 4;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+}
+
+.legend-dash {
+    display: inline-block;
+    width: 16px;
+    margin-right: 4px;
+    border-top: 2px dashed var(--accent);
+    vertical-align: middle;
+}
+
+.segmented[hidden] {
+    display: none;
+}
+
 .chart-empty {
     display: grid;
     place-items: center;

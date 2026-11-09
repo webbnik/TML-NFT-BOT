@@ -25,6 +25,7 @@
     let days = RANGES.includes(store.get('tml.historyRange', 7)) ? store.get('tml.historyRange', 7) : 7;
     let unit = store.get('tml.historyUnit', 'SOL');
     if (unit !== 'SOL' && !state.currencies.some(c => c.symbol === unit)) unit = 'SOL';
+    let showSolLine = store.get('tml.historySolLine', true) !== false;
     let data = null;
 
     // ---------- Formatting ----------
@@ -89,6 +90,19 @@
         }, 0)]);
     }
 
+    // SOL's own price over the same period, starting where the floor line starts:
+    // what the floor would be worth had it stayed at its starting price in SOL
+    function solLine(solPoints) {
+        if (unit === 'SOL' || !showSolLine || solPoints.length < 3) return null;
+        const rates = toPoints((data.rates || {})[unit]);
+        if (rates.length < 2) return null;
+        const current = state.currencies.find(c => c.symbol === unit).price;
+        const t0 = solPoints[0][0], t1 = solPoints[solPoints.length - 1][0];
+        const base = solPoints[0][1];
+        const times = [t0, ...rates.map(([time]) => time).filter(time => time > t0 && time < t1), t1];
+        return { rates, current, points: times.map(time => [time, base * rateAt(rates, time, current)]) };
+    }
+
     function inUnit(points) {
         if (unit === 'SOL') return points;
         const current = state.currencies.find(c => c.symbol === unit).price;
@@ -110,9 +124,9 @@
         return el;
     }
 
-    function drawChart(box, points) {
+    function drawChart(box, points, sol) {
         const t0 = points[0][0], t1 = points[points.length - 1][0];
-        const values = points.map(p => p[1]);
+        const values = points.map(p => p[1]).concat(sol ? sol.points.map(p => p[1]) : []);
         let min = Math.min(...values), max = Math.max(...values);
         if (min === max) { min *= 0.99; max *= 1.01; }
         const x = t => (t1 === t0 ? W : (t - t0) / (t1 - t0) * W);
@@ -128,7 +142,12 @@
         for (const v of [max, (min + max) / 2, min]) {
             svg.append(svgElement('line', { class: 'grid', x1: 0, x2: W, y1: y(v).toFixed(2), y2: y(v).toFixed(2) }));
         }
-        svg.append(svgElement('path', { class: 'area', d: `${d} V${H} H0 Z` }), svgElement('path', { class: 'line', d }));
+        svg.append(svgElement('path', { class: 'area', d: `${d} V${H} H0 Z` }));
+        if (sol) {
+            const solPath = sol.points.map(([t, v], i) => `${i ? 'L' : 'M'}${x(t).toFixed(2)} ${y(v).toFixed(2)}`).join(' ');
+            svg.append(svgElement('path', { class: 'sol-line', d: solPath }));
+        }
+        svg.append(svgElement('path', { class: 'line', d }));
 
         const labels = div('chart-labels');
         labels.append(div('chart-y chart-y-max', formatValue(max)), div('chart-y chart-y-min', formatValue(min)));
@@ -158,7 +177,8 @@
             cursor.style.setProperty('left', left);
             dot.style.setProperty('left', left);
             dot.style.setProperty('top', `${y(value) / H * 100}%`);
-            tip.textContent = `${formatValue(value)} · ${formatTime(time, true)}`;
+            const solPrice = sol ? ` · 1 SOL ${formatValue(rateAt(sol.rates, time, sol.current))}` : '';
+            tip.textContent = `${formatValue(value)}${solPrice} · ${formatTime(time, true)}`;
             tip.style.setProperty('left', left);
             tip.classList.toggle('flip', fraction > 0.6);
             [cursor, dot, tip].forEach(el => { el.hidden = false; });
@@ -172,6 +192,8 @@
     function render() {
         $$('[data-range]').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.range) === days)));
         $$('[data-unit]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.unit === unit)));
+        $('[data-sol-line-group]').hidden = unit === 'SOL';
+        $('[data-sol-line]').setAttribute('aria-pressed', String(showSolLine));
         if (!data) return;
 
         let earliest = Infinity;
@@ -182,6 +204,7 @@
             if (!card) return;
             const box = $('[data-chart]', card);
             const points = inUnit(chart.points);
+            const sol = solLine(chart.points);
             const change = $('[data-chart-change]', card);
             if (points.length < 3) {
                 box.replaceChildren(div('chart-empty', 'Collecting data… The chart appears once a few points have been recorded.'));
@@ -191,7 +214,7 @@
                 return;
             }
             earliest = Math.min(earliest, points[0][0]);
-            drawChart(box, points);
+            drawChart(box, points, sol);
 
             const first = points[0][1], last = points[points.length - 1][1];
             const pct = first ? (last - first) / first * 100 : 0;
@@ -224,6 +247,12 @@
         render();
         load();
     }));
+    $('[data-sol-line]').addEventListener('click', event => {
+        event.preventDefault();
+        showSolLine = !showSolLine;
+        store.set('tml.historySolLine', showSolLine);
+        render();
+    });
     $$('[data-unit]').forEach(button => button.addEventListener('click', event => {
         event.preventDefault();
         unit = button.dataset.unit;
