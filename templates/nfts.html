@@ -27,6 +27,8 @@
                 <span class="fiat" data-field="floor-fiat">{{ money(nft.floor) }}</span>
             </div>
             <span class="delta" data-field="delta" title="Floor compared to the 24h average sale price"></span>
+            {# Phones show the trend line here, next to the badge; larger screens in the row below #}
+            <a class="spark spark-inline" data-spark href="{{ url_for('history_page') }}#{{ nft.symbol }}" hidden></a>
         </div>
 
         <div class="meta">
@@ -34,7 +36,7 @@
                 <div><dt>Listed</dt><dd data-field="listed">{{ nft.listed }}</dd></div>
                 <div><dt>24h avg</dt><dd data-field="avg24h">{{ sol(nft.avg24h) }}</dd></div>
             </dl>
-            <span class="spark" data-spark hidden></span>
+            <a class="spark" data-spark href="{{ url_for('history_page') }}#{{ nft.symbol }}" hidden></a>
         </div>
     </div>
 
@@ -119,7 +121,10 @@
         </section>
 
         <section aria-labelledby="collections-title">
-            <h2 class="section-title" id="collections-title">Collections</h2>
+            <div class="section-head">
+                <h2 class="section-title" id="collections-title">Collections</h2>
+                <a class="text-link" href="{{ url_for('history_page') }}">{{ icon('chart') }} Price history</a>
+            </div>
             <div class="grid">
                 {% for nft in state.nfts if nft.order != 0 %}{{ nft_card(nft) }}{% endfor %}
                 {% for nft in state.nfts if nft.order == 0 %}{{ nft_card(nft) }}{% endfor %}
@@ -133,6 +138,7 @@
             <a href="https://discord.gg/WGYaCcApvQ" target="_blank" rel="noopener noreferrer">{{ icon('chat') }} Discord</a>
             <a href="https://github.com/webbnik/TML-NFT-BOT" target="_blank" rel="noopener noreferrer">{{ icon('code') }} GitHub</a>
             <a href="https://links.hardy.se/" target="_blank" rel="noopener noreferrer">{{ icon('link') }} All links</a>
+            <a href="{{ url_for('history_page') }}">{{ icon('chart') }} Price history</a>
         </nav>
     </footer>
 

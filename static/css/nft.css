@@ -642,7 +642,8 @@ body.holdings-on .holdings-stat {
     color: var(--muted);
 }
 
-.spark[hidden] {
+.spark[hidden],
+.spark-inline {
     display: none;
 }
 
@@ -766,10 +767,253 @@ body.holdings-on .holding {
     text-align: right;
 }
 
+/* ---------- Links ---------- */
+a.brand {
+    text-decoration: none;
+}
+
+.section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.section-head .section-title {
+    margin: 0;
+}
+
+.text-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.text-link:hover {
+    color: var(--gold);
+}
+
+a.spark {
+    cursor: pointer;
+}
+
+a.spark:hover {
+    opacity: 0.8;
+}
+
+/* ---------- History page ---------- */
+.history-head {
+    margin-bottom: 20px;
+}
+
+.page-title {
+    margin: 10px 0 4px;
+    font-family: var(--font-display);
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.hint-text {
+    margin: 0 0 14px;
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.history-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.chart-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(480px, 100%), 1fr));
+    gap: 14px;
+}
+
+.chart-card {
+    padding: 14px 16px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    scroll-margin-top: 16px;
+}
+
+.chart-card:target {
+    border-color: var(--gold);
+}
+
+.chart-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.chart-head img {
+    flex: none;
+    border-radius: 10px;
+    object-fit: cover;
+}
+
+.chart-title {
+    flex: 1;
+    min-width: 0;
+}
+
+.chart-title h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.chart-title h2 a {
+    text-decoration: none;
+}
+
+.chart-title h2 a:hover {
+    color: var(--gold);
+}
+
+.chart-summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 1.6em;
+    font-size: 0.95rem;
+}
+
+.chart {
+    position: relative;
+    height: 200px;
+    margin-bottom: 22px;
+    color: var(--gold);
+    touch-action: pan-y;
+}
+
+.chart svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.chart .grid {
+    stroke: var(--border);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+}
+
+.chart .line {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+}
+
+.chart .area {
+    fill: currentColor;
+    opacity: 0.1;
+}
+
+.chart-empty {
+    display: grid;
+    place-items: center;
+    height: 100%;
+    padding: 0 16px;
+    border: 1px dashed var(--border-strong);
+    border-radius: 12px;
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+.chart-y {
+    position: absolute;
+    right: 0;
+    padding: 0 4px;
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 0.72rem;
+}
+
+.chart-y-max {
+    top: 0;
+}
+
+.chart-y-min {
+    bottom: 0;
+}
+
+.chart-x {
+    position: absolute;
+    right: 0;
+    bottom: -20px;
+    left: 0;
+    display: flex;
+    justify-content: space-between;
+    color: var(--muted);
+    font-size: 0.72rem;
+}
+
+.chart-cursor {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--border-strong);
+    pointer-events: none;
+}
+
+.chart-dot {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    margin: -5px 0 0 -5px;
+    border: 2px solid var(--surface);
+    border-radius: 50%;
+    background: var(--gold);
+    pointer-events: none;
+}
+
+.chart-tip {
+    position: absolute;
+    top: -6px;
+    padding: 4px 8px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    background: var(--surface-2);
+    color: var(--text);
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+    pointer-events: none;
+    transform: translate(8px, -100%);
+}
+
+.chart-tip.flip {
+    transform: translate(calc(-100% - 8px), -100%);
+}
+
+.chart-cursor[hidden],
+.chart-dot[hidden],
+.chart-tip[hidden] {
+    display: none;
+}
+
 /* ---------- Footer ---------- */
 .footer {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: 12px 24px;
@@ -782,12 +1026,17 @@ body.holdings-on .holding {
 }
 
 .footer p {
+    flex: 1 1 auto;
+    min-width: 0;
     margin: 0;
 }
 
+/* Links stay on one line to the right; the text beside them wraps instead */
 .footer nav {
     display: flex;
+    flex: none;
     gap: 18px;
+    white-space: nowrap;
 }
 
 .footer a {
@@ -878,6 +1127,11 @@ body.holdings-on .holding {
         padding-left: 24px;
     }
 
+    .section-head {
+        justify-content: flex-end;
+        margin-bottom: 8px;
+    }
+
     .section-title {
         display: none;
     }
@@ -906,8 +1160,17 @@ body.holdings-on .holding {
     }
 
     .spark {
-        width: 64px;
+        width: 84px;
         height: 22px;
+    }
+
+    /* Trend line next to the "vs 24h" badge, so "Listed · 24h avg" stays on one line */
+    .meta .spark {
+        display: none;
+    }
+
+    .spark-inline:not([hidden]) {
+        display: block;
     }
 
     .brand-sub {
@@ -934,6 +1197,10 @@ body.holdings-on .holding {
     .footer {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .footer nav {
+        flex-wrap: wrap;
     }
 }
 

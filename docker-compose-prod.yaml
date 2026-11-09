@@ -10,18 +10,24 @@ services:
       - 127.0.0.1:8457:8000
     environment:
       PYTHONUNBUFFERED: 1
+      BACKUP_DIR: /app/backups
     # Webhooks are passed as environment variables; the file itself is not mounted
     env_file:
       - .env
     volumes:
       # Database (incl. price history) and downloaded artwork survive deploys
       - tml-nft-data:/app/instance
+      # Nightly database backups, in their own volume. To keep copies off the
+      # server, sync /var/lib/docker/volumes/tml-nft-backups/_data elsewhere.
+      - tml-nft-backups:/app/backups
     networks:
       - tml_network
 
 volumes:
   tml-nft-data:
     name: tml-nft-data
+  tml-nft-backups:
+    name: tml-nft-backups
 
 networks:
   tml_network:

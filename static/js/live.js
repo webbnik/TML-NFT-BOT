@@ -1,4 +1,4 @@
-// Live prices, currency switcher, holdings calculator and theme toggle.
+// Live prices, currency switcher, holdings calculator, artwork and trend lines.
 (() => {
     'use strict';
 
@@ -115,7 +115,7 @@
             }
 
             renderMedia(card, nft);
-            renderSpark($('[data-spark]', card), nft);
+            $$('[data-spark]', card).forEach(el => renderSpark(el, nft));
 
             const qty = holdings[nft.symbol] || 0;
             const input = $('[data-qty]', card);
@@ -362,27 +362,6 @@
         });
     });
 
-    // ---------- Theme toggle: auto → light → dark ----------
-    const THEMES = ['auto', 'light', 'dark'];
-    const themeButton = $('[data-theme-toggle]');
-    let theme = store.get('tml.theme', 'auto');
-    if (!THEMES.includes(theme)) theme = 'auto';
-
-    function applyTheme() {
-        if (theme === 'auto') delete document.documentElement.dataset.theme;
-        else document.documentElement.dataset.theme = theme;
-        $('use', themeButton).setAttribute('href', `#i-theme-${theme}`);
-        themeButton.setAttribute('aria-label', `Theme: ${theme} (click to change)`);
-        themeButton.title = `Theme: ${theme}`;
-    }
-
-    themeButton.addEventListener('click', () => {
-        theme = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length];
-        store.set('tml.theme', theme);
-        applyTheme();
-    });
-
-    applyTheme();
     applyHoldingsToggle();
     render();
     loadHistory();

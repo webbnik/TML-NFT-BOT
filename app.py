@@ -1,14 +1,17 @@
 import io
 import os
 import re
+import gzip
 import time
+import shutil
+import sqlite3
 import hashlib
 import logging
 import mimetypes
 import requests
 from dotenv import load_dotenv
 from urllib.parse import urlparse
-from sqlalchemy import event
+from sqlalchemy import event, func
 from sqlalchemy.engine import Engine
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta, timezone
@@ -114,6 +117,13 @@ CURRENCIES = [
 # and at least this often otherwise. History is kept indefinitely.
 HISTORY_INTERVAL = timedelta(minutes=5)
 
+# Nightly database backups (gzip-compressed SQLite copies), newest BACKUP_KEEP kept
+BACKUP_DIR = os.getenv("BACKUP_DIR", os.path.join(app.instance_path, "backups"))
+BACKUP_KEEP = int(os.getenv("BACKUP_KEEP", "30"))
+
+# Post to the status webhook when prices have not updated for this long
+STALE_AFTER = timedelta(minutes=int(os.getenv("STALE_ALERT_MINUTES", "15")))
+
 
 # Hosts of the fallback collection images in COLLECTIONS.
 # Floor NFT artwork is served from this site itself (/media/).
@@ -142,6 +152,8 @@ def security_headers(response):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=()"
+    # Browsers only accept this over HTTPS; tells them to always use HTTPS for this host
+    response.headers["Strict-Transport-Security"] = "max-age=31536000"
     return response
 
 
@@ -567,6 +579,87 @@ def fetch_media():
                 os.remove(os.path.join(MEDIA_DIR, filename))
 
 
+# ---------- Backups ----------
+def backup_database(source=None):
+    """Write a gzip-compressed copy of the SQLite database to BACKUP_DIR
+    (one per day, nft-YYYY-MM-DD.db.gz) and delete all but the newest BACKUP_KEEP.
+    Uses SQLite's backup API, which is safe while the app is writing."""
+    if source is None:
+        with app.app_context():
+            url = db.engine.url
+            if url.get_backend_name() != "sqlite" or url.database in (None, "", ":memory:"):
+                return None
+            source = url.database
+    os.makedirs(BACKUP_DIR, exist_ok=True)
+    target = os.path.join(BACKUP_DIR, f"nft-{utcnow():%Y-%m-%d}.db.gz")
+    copy = target + ".tmp"
+    try:
+        src, dst = sqlite3.connect(source), sqlite3.connect(copy)
+        with dst:
+            src.backup(dst)
+        src.close()
+        dst.close()
+        with open(copy, "rb") as plain, gzip.open(target + ".part", "wb") as packed:
+            shutil.copyfileobj(plain, packed)
+        os.replace(target + ".part", target)
+    except (sqlite3.Error, OSError) as e:
+        print(f"Database backup failed: {e}")
+        return None
+    finally:
+        for leftover in (copy, target + ".part"):
+            if os.path.exists(leftover):
+                os.remove(leftover)
+
+    backups = sorted(f for f in os.listdir(BACKUP_DIR) if f.startswith("nft-") and f.endswith(".db.gz"))
+    for old in backups[:-BACKUP_KEEP]:
+        os.remove(os.path.join(BACKUP_DIR, old))
+    print(f"Database backup written: {target}")
+    return target
+
+
+# ---------- Status alerts ----------
+_stale_alerts = {}
+
+
+def send_status(message, color):
+    """Post a message to the status webhook (the same channel as deploy notices)."""
+    webhook = os.getenv("DISCORD_WEBHOOK_STATUS")
+    print(f"Status: {message}")
+    if not webhook:
+        return
+    payload = {
+        "username": "NFT status",
+        "avatar_url": f"{PUBLIC_URL}/static/favicon/android-chrome-512x512.png",
+        "embeds": [{"description": message, "color": color}],
+    }
+    try:
+        requests.post(webhook, json=payload, timeout=REQUEST_TIMEOUT)
+    except requests.RequestException as e:
+        print(f"Status webhook failed: {e}")
+
+
+def check_freshness():
+    """Alert once when prices stop updating, and once when they recover."""
+    with app.app_context():
+        now = utcnow()
+        sources = {
+            "Magic Eden floor prices": db.session.query(func.max(NFT.fetched)).scalar(),
+            "Binance exchange rates": db.session.query(func.max(CRYPTO.fetched)).scalar(),
+        }
+    for name, last in sources.items():
+        if last is None:
+            continue
+        stale = now - last > STALE_AFTER
+        if stale and not _stale_alerts.get(name):
+            minutes = int((now - last).total_seconds() // 60)
+            send_status(f"⚠️ {name} have not updated for {minutes} minutes "
+                        f"(last update {last:%Y-%m-%d %H:%M} UTC). {PUBLIC_URL}/", 0xCF3249)
+            _stale_alerts[name] = True
+        elif not stale and _stale_alerts.get(name):
+            send_status(f"✅ {name} are updating again.", 0x3FD49A)
+            _stale_alerts[name] = False
+
+
 def iso_utc(dt):
     """Stored datetimes are naive UTC; mark them as UTC for the browser."""
     return dt.isoformat(timespec="seconds") + "Z" if dt else None
@@ -659,32 +752,60 @@ def api_prices():
     return response
 
 
-def get_history(days, points=200):
-    """Floor history per collection for the last `days` days, reduced to at
-    most `points` values per collection (the last value in each time slot)."""
-    since = utcnow() - timedelta(days=days)
+def downsample(rows, days, points, scale=1):
+    """rows of (symbol, recorded, value) sorted by symbol and time -> per symbol
+    at most `points` [iso_time, value] pairs (the last value in each time slot)."""
     slot = max(1, int(days * 86400 / points))
+    series = {}
+    for symbol, recorded, value in rows:
+        key = int(recorded.replace(tzinfo=timezone.utc).timestamp()) // slot
+        series.setdefault(symbol, {})[key] = (recorded, value)
+    return {
+        symbol: [[iso_utc(recorded), value / scale] for recorded, value in values.values()]
+        for symbol, values in series.items()
+    }
+
+
+def get_history(days, points=200):
+    """Floor history (SOL) per collection for the last `days` days."""
+    since = utcnow() - timedelta(days=days)
     rows = (db.session.query(FloorHistory.symbol, FloorHistory.recorded, FloorHistory.floor)
             .filter(FloorHistory.recorded >= since)
             .order_by(FloorHistory.symbol, FloorHistory.recorded).all())
-    history = {}
-    for symbol, recorded, floor in rows:
-        series = history.setdefault(symbol, {})
-        series[int(recorded.replace(tzinfo=timezone.utc).timestamp()) // slot] = (recorded, floor)
-    return {
-        symbol: [[iso_utc(recorded), floor / LAMPORTS_PER_SOL] for recorded, floor in series.values()]
-        for symbol, series in history.items()
-    }
+    return downsample(rows, days, points, LAMPORTS_PER_SOL)
+
+
+def get_rate_history(days, points=200):
+    """SOL exchange rate history per currency (e.g. SOLUSDT) for the last `days` days."""
+    since = utcnow() - timedelta(days=days)
+    rows = (db.session.query(RateHistory.symbol, RateHistory.recorded, RateHistory.price)
+            .filter(RateHistory.recorded >= since)
+            .order_by(RateHistory.symbol, RateHistory.recorded).all())
+    return downsample(rows, days, points)
 
 
 @app.route("/api/history", methods=['GET'])
 def api_history():
-    """Floor price history, e.g. /api/history?days=7 (max 3650 days)."""
+    """Floor price history, e.g. /api/history?days=7 (max 3650 days).
+    Add &rates=1 to also get the SOL exchange rates for the same period."""
     days = request.args.get("days", default=7, type=float)
     days = min(max(days, 1 / 24), 3650)
-    response = jsonify({"days": days, "history": get_history(days)})
+    points = min(max(request.args.get("points", default=200, type=int), 10), 1000)
+    data = {"days": days, "history": get_history(days, points)}
+    if request.args.get("rates"):
+        data["rates"] = get_rate_history(days, points)
+    response = jsonify(data)
     response.headers["Cache-Control"] = "public, max-age=60"
     return response
+
+
+@app.route("/history", methods=['GET'])
+def history_page():
+    """Charts of the stored floor price history."""
+    state = get_state()
+    if not state:
+        return render_template('error.html'), 503
+    return render_template("history.html", state=state)
 
 
 @app.route("/favicon.ico", methods=['GET'])
@@ -729,6 +850,10 @@ if not os.getenv("TML_DISABLE_SCHEDULER"):
     scheduler.add_job(fetch_magiceden, 'interval', seconds=40, id="magiceden", replace_existing=True, next_run_time=datetime.now().replace(second=0, microsecond=0) + timedelta(minutes=1))
     scheduler.add_job(fetch_binance, 'interval', seconds=40, id="binance", replace_existing=True, next_run_time=datetime.now().replace(second=10, microsecond=0) + timedelta(minutes=1))
     scheduler.add_job(fetch_media, 'interval', minutes=5, id="media", replace_existing=True, next_run_time=datetime.now().replace(second=25, microsecond=0) + timedelta(minutes=1))
+    scheduler.add_job(check_freshness, 'interval', minutes=1, id="freshness", replace_existing=True)
+    # Nightly backup at 03:30 UTC, plus one shortly after startup
+    scheduler.add_job(backup_database, 'cron', hour=3, minute=30, timezone=timezone.utc, id="backup", replace_existing=True)
+    scheduler.add_job(backup_database, 'date', run_date=datetime.now() + timedelta(minutes=2), id="backup-startup", replace_existing=True)
     scheduler.start()
 
 # Run as gunicorn

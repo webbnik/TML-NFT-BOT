@@ -1,0 +1,89 @@
+{%- macro icon(name, cls='icon') -%}<svg class="{{ cls }}" aria-hidden="true"><use href="#i-{{ name }}"></use></svg>{%- endmacro -%}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Price history · Tomorrowland NFTs</title>
+    <meta name="description" content="Floor price history for the Tomorrowland Medallion NFT collections.">
+
+    <script src="{{ asset('js/theme-init.js') }}"></script>
+    <link rel="stylesheet" href="{{ asset('css/nft.css') }}">
+{% include '_head_icons.html' %}
+</head>
+
+<body>
+    {% include 'icons.svg' %}
+
+    <header class="topbar">
+        <a class="brand" href="{{ url_for('index') }}">
+            <img src="{{ asset('img/logo.svg') }}" alt="" width="32" height="32">
+            <div>
+                <div class="brand-name">Tomorrowland NFTs</div>
+                <div class="brand-sub">Medallion floor tracker</div>
+            </div>
+        </a>
+        <div class="topbar-actions">
+            <button type="button" class="icon-btn" data-theme-toggle aria-label="Change theme">
+                {{ icon('theme-auto') }}
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <section class="history-head">
+            <a class="text-link" href="{{ url_for('index') }}">{{ icon('back') }} Live prices</a>
+            <h1 class="page-title">Price history</h1>
+            <p class="hint-text" data-coverage>Floor prices are recorded on every change and at least every 5 minutes.</p>
+
+            <div class="history-controls">
+                <div class="segmented" role="group" aria-label="Time range">
+                    <a href="#" data-range="7" aria-pressed="true">7D</a>
+                    <a href="#" data-range="30" aria-pressed="false">30D</a>
+                    <a href="#" data-range="90" aria-pressed="false">90D</a>
+                    <a href="#" data-range="365" aria-pressed="false">1Y</a>
+                    <a href="#" data-range="3650" aria-pressed="false">All</a>
+                </div>
+                <div class="segmented" role="group" aria-label="Currency">
+                    <a href="#" data-unit="SOL" aria-pressed="true">◎ SOL</a>
+                    {% for c in state.currencies %}
+                    <a href="#" data-unit="{{ c.symbol }}" title="{{ c.name }}, converted with the exchange rate at each point in time" aria-pressed="false">{{ c.sign }} {{ c.symbol | replace('SOL', '', 1) }}</a>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+
+        <div class="chart-list">
+            {% for nft in (state.nfts | selectattr('order', 'ne', 0) | list) + (state.nfts | selectattr('order', 'equalto', 0) | list) %}
+            <article class="chart-card" id="{{ nft.symbol }}" data-symbol="{{ nft.symbol }}">
+                <div class="chart-head">
+                    <img src="{{ nft.floor_nft.image if nft.floor_nft and nft.floor_nft.image else nft.image }}" alt="" width="44" height="44" decoding="async">
+                    <div class="chart-title">
+                        <h2><a href="{{ nft.url }}" target="_blank" rel="noopener noreferrer">{{ nft.name }} {{ icon('external', 'icon icon-sm') }}</a></h2>
+                        <div class="chart-summary"><strong data-chart-last></strong> <span class="delta" data-chart-change></span></div>
+                    </div>
+                    {% if not nft.include_in_total %}<span class="tag">Not in set</span>{% endif %}
+                </div>
+                <div class="chart" data-chart>
+                    <div class="chart-empty" data-chart-empty>Collecting data… The chart appears once a few points have been recorded.</div>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>Floor prices from Magic Eden, exchange rates from Binance.</p>
+        <nav aria-label="Contact">
+            <a href="https://discord.gg/WGYaCcApvQ" target="_blank" rel="noopener noreferrer">{{ icon('chat') }} Discord</a>
+            <a href="https://github.com/webbnik/TML-NFT-BOT" target="_blank" rel="noopener noreferrer">{{ icon('code') }} GitHub</a>
+            <a href="https://links.hardy.se/" target="_blank" rel="noopener noreferrer">{{ icon('link') }} All links</a>
+        </nav>
+    </footer>
+
+    <script id="initial-state" type="application/json">{{ state | tojson }}</script>
+    <script src="{{ asset('js/history.js') }}"></script>
+</body>
+
+</html>

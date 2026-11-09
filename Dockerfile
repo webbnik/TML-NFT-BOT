@@ -6,7 +6,7 @@ ENV PYTHONUNBUFFERED=1 \
 
 RUN groupadd --gid 5005 pythongroup && \
     useradd --uid 5060 --gid pythongroup --home /app pythonuser && \
-    mkdir -p /app/instance && chown -R pythonuser:pythongroup /app
+    mkdir -p /app/instance /app/backups && chown -R pythonuser:pythongroup /app
 
 WORKDIR /app
 
