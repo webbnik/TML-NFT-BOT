@@ -73,11 +73,28 @@
     }
 
     // ---------- Rendering ----------
+    // "▲ 1.2% vs 24h" badge: a floor compared to the 24h average sale price
+    function setDelta(el, floor, avg24h) {
+        if (!(avg24h > 0)) {
+            setText(el, '');
+            return;
+        }
+        const pct = (floor - avg24h) / avg24h * 100;
+        const rounded = Math.abs(pct) < 0.05 ? 0 : pct;
+        setText(el, `${rounded > 0 ? '▲' : rounded < 0 ? '▼' : '•'} ${number(Math.abs(rounded), 1)}% vs 24h`);
+        el.classList.toggle('up', rounded > 0);
+        el.classList.toggle('down', rounded < 0);
+    }
+
     function render() {
         const c = currency();
 
         setText($('[data-total-sol]'), formatSol(state.total_floor));
         setText($('[data-total-fiat]'), formatMoney(state.total_floor));
+        // Only when every collection in the set has 24h sales to compare with
+        const inSet = state.nfts.filter(nft => nft.include_in_total);
+        setDelta($('[data-total-delta]'), state.total_floor,
+            inSet.every(nft => nft.avg24h > 0) ? inSet.reduce((sum, nft) => sum + nft.avg24h, 0) : 0);
         setText($('[data-rate]'), `${c.sign}${number(c.price, RATE_DECIMALS[c.symbol] ?? 2)}`);
         document.title = `${formatSol(state.total_floor)} · Tomorrowland NFTs`;
 
@@ -103,16 +120,7 @@
             setText(field('listed'), nft.listed.toLocaleString());
             setText(field('avg24h'), nft.avg24h ? formatSol(nft.avg24h) : '–');
 
-            const deltaEl = field('delta');
-            if (nft.avg24h > 0) {
-                const pct = (nft.floor - nft.avg24h) / nft.avg24h * 100;
-                const rounded = Math.abs(pct) < 0.05 ? 0 : pct;
-                setText(deltaEl, `${rounded > 0 ? '▲' : rounded < 0 ? '▼' : '•'} ${number(Math.abs(rounded), 1)}% vs 24h`);
-                deltaEl.classList.toggle('up', rounded > 0);
-                deltaEl.classList.toggle('down', rounded < 0);
-            } else {
-                setText(deltaEl, '');
-            }
+            setDelta(field('delta'), nft.floor, nft.avg24h);
 
             renderMedia(card, nft);
             $$('[data-spark]', card).forEach(el => renderSpark(el, nft));

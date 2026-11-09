@@ -95,7 +95,8 @@
                 <div class="hero-stat">
                     <div class="label">Full set floor <span class="hint">one of each collection</span></div>
                     <div class="hero-value" data-total-sol>{{ sol(state.total_floor) }}</div>
-                    <div class="hero-fiat" data-total-fiat>{{ money(state.total_floor) }}</div>
+                    <div class="hero-fiat"><span data-total-fiat>{{ money(state.total_floor) }}</span>
+                        <span class="delta" data-total-delta title="Full set floor compared to the sum of the 24h average sale prices"></span></div>
                 </div>
                 <div class="hero-stat holdings-stat">
                     <div class="label">My holdings <span class="hint" data-holdings-count></span></div>
