@@ -1,5 +1,5 @@
-// Theme: apply the saved theme before the page paints (this file is loaded
-// without defer/async in <head> on purpose), then wire up the theme button.
+// Theme and collectibles: apply the saved choices before the page paints (this
+// file is loaded without defer/async in <head> on purpose), then wire up the buttons.
 (() => {
     'use strict';
     const THEMES = ['auto', 'light', 'dark'];
@@ -19,8 +19,32 @@
         button.title = `Theme: ${theme}`;
     }
 
+    // Collectibles (collections outside the full set) are hidden unless switched on
+    let collectibles = false;
+    try { collectibles = JSON.parse(localStorage.getItem('tml.showCollectibles')) === true; } catch (e) { }
+
+    function applyCollectibles() {
+        if (collectibles) document.documentElement.dataset.collectibles = 'on';
+        else delete document.documentElement.dataset.collectibles;
+        document.querySelectorAll('[data-collectibles-toggle]').forEach(button => {
+            button.setAttribute('aria-pressed', String(collectibles));
+            const label = collectibles ? button.dataset.labelOn : button.dataset.labelOff;
+            if (label) button.textContent = label;
+        });
+    }
+
     applyTheme();
+    applyCollectibles();
     document.addEventListener('DOMContentLoaded', () => {
+        applyCollectibles();
+        document.querySelectorAll('[data-collectibles-toggle]').forEach(button => {
+            button.addEventListener('click', event => {
+                event.preventDefault();
+                collectibles = !collectibles;
+                try { localStorage.setItem('tml.showCollectibles', JSON.stringify(collectibles)); } catch (e) { }
+                applyCollectibles();
+            });
+        });
         applyTheme();
         const button = document.querySelector('[data-theme-toggle]');
         if (!button) return;

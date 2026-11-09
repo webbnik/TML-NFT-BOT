@@ -819,6 +819,25 @@ a.brand {
     color: var(--gold);
 }
 
+button.text-link {
+    padding: 0;
+    border: 0;
+    background: none;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.section-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+}
+
+/* Collections outside the full set, hidden unless switched on */
+html:not([data-collectibles="on"]) .collectible {
+    display: none;
+}
+
 a.spark {
     cursor: pointer;
 }
@@ -857,8 +876,9 @@ a.spark:hover {
     gap: 14px;
 }
 
-/* The full set spans the whole row; the collections below form a grid */
-#full-set {
+/* With collectibles shown the full set spans the whole row above a 2x2 grid;
+   without them it is one of the four charts in the 2x2 grid */
+html[data-collectibles="on"] #full-set {
     grid-column: 1 / -1;
 }
 

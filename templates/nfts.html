@@ -3,7 +3,7 @@
 {%- macro icon(name, cls='icon') -%}<svg class="{{ cls }}" aria-hidden="true"><use href="#i-{{ name }}"></use></svg>{%- endmacro -%}
 {%- macro nft_card(nft) -%}
 {%- set floor_nft = nft.floor_nft -%}
-<article class="card" data-symbol="{{ nft.symbol }}">
+<article class="card{{ ' collectible' if nft.order == 0 }}" data-symbol="{{ nft.symbol }}">
     <a class="card-media" data-media-link href="{{ floor_nft.url if floor_nft else nft.url }}" target="_blank" rel="noopener noreferrer" tabindex="-1">
         <img data-media-image src="{{ floor_nft.image if floor_nft and floor_nft.image else nft.image }}" alt="{{ floor_nft.name if floor_nft else nft.name }}" decoding="async">
         <video data-media-video muted loop playsinline preload="none" aria-hidden="true" {% if floor_nft and floor_nft.video %}data-src="{{ floor_nft.video }}"{% endif %}></video>
@@ -125,7 +125,11 @@
         <section aria-labelledby="collections-title">
             <div class="section-head">
                 <h2 class="section-title" id="collections-title">Collections</h2>
-                <a class="text-link" href="{{ url_for('history_page') }}">{{ icon('chart') }} Price history</a>
+                <div class="section-links">
+                    <button type="button" class="text-link" data-collectibles-toggle aria-pressed="false"
+                        data-label-off="Show collectibles" data-label-on="Hide collectibles">Show collectibles</button>
+                    <a class="text-link" href="{{ url_for('history_page') }}">{{ icon('chart') }} Price history</a>
+                </div>
             </div>
             <div class="grid">
                 {% for nft in state.nfts if nft.order != 0 %}{{ nft_card(nft) }}{% endfor %}

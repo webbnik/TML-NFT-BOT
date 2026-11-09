@@ -56,6 +56,10 @@
                         title="SOL's own price, starting from the same point as the floor. The gap between the lines is the floor's own change in SOL.">
                         <span class="legend-dash" aria-hidden="true"></span> SOL price</a>
                 </div>
+                <div class="segmented" role="group" aria-label="Collectibles">
+                    <a href="#" data-collectibles-toggle aria-pressed="false"
+                        title="Show collections that are not part of the full set">Collectibles</a>
+                </div>
             </div>
         </section>
 
@@ -73,7 +77,7 @@
                 </div>
             </article>
             {% for nft in (state.nfts | selectattr('order', 'ne', 0) | list) + (state.nfts | selectattr('order', 'equalto', 0) | list) %}
-            <article class="chart-card" id="{{ nft.symbol }}" data-symbol="{{ nft.symbol }}">
+            <article class="chart-card{{ ' collectible' if nft.order == 0 }}" id="{{ nft.symbol }}" data-symbol="{{ nft.symbol }}">
                 <div class="chart-head">
                     <img src="{{ nft.floor_nft.image if nft.floor_nft and nft.floor_nft.image else nft.image }}" alt="" width="44" height="44" decoding="async">
                     <div class="chart-title">
