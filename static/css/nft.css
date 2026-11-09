@@ -847,6 +847,11 @@ a.spark:hover {
     gap: 14px;
 }
 
+/* The full set spans the whole row; the collections below form a grid */
+#full-set {
+    grid-column: 1 / -1;
+}
+
 .chart-card {
     padding: 14px 16px 12px;
     border: 1px solid var(--border);

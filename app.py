@@ -766,13 +766,23 @@ def downsample(rows, days, points, scale=1):
     }
 
 
+def history_span(days, model):
+    """Days to spread the points over: the requested period, or less when the
+    stored history is shorter (so "All" is not 10 years of mostly empty slots)."""
+    first = db.session.query(func.min(model.recorded)).scalar()
+    if first is None:
+        return days
+    stored = (utcnow() - first).total_seconds() / 86400
+    return max(min(days, stored), 1 / 24)
+
+
 def get_history(days, points=200):
     """Floor history (SOL) per collection for the last `days` days."""
     since = utcnow() - timedelta(days=days)
     rows = (db.session.query(FloorHistory.symbol, FloorHistory.recorded, FloorHistory.floor)
             .filter(FloorHistory.recorded >= since)
             .order_by(FloorHistory.symbol, FloorHistory.recorded).all())
-    return downsample(rows, days, points, LAMPORTS_PER_SOL)
+    return downsample(rows, history_span(days, FloorHistory), points, LAMPORTS_PER_SOL)
 
 
 def get_rate_history(days, points=200):
@@ -781,7 +791,7 @@ def get_rate_history(days, points=200):
     rows = (db.session.query(RateHistory.symbol, RateHistory.recorded, RateHistory.price)
             .filter(RateHistory.recorded >= since)
             .order_by(RateHistory.symbol, RateHistory.recorded).all())
-    return downsample(rows, days, points)
+    return downsample(rows, history_span(days, RateHistory), points)
 
 
 @app.route("/api/history", methods=['GET'])

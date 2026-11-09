@@ -68,6 +68,18 @@ def test_api_history_with_rates(seeded, client):
     assert "rates" not in client.get("/api/history?days=7").get_json()
 
 
+def test_all_range_spreads_points_over_stored_history(seeded, client):
+    tml = seeded
+    now = tml.utcnow()
+    with tml.app.app_context():
+        for minutes in range(0, 24 * 60, 5):  # one day, every 5 minutes
+            tml.db.session.add(tml.FloorHistory(symbol="tomorrowland_winter", recorded=now - timedelta(minutes=minutes),
+                                                floor=1_000_000_000 + minutes, listed=1))
+        tml.db.session.commit()
+    series = client.get("/api/history?days=3650&points=100").get_json()["history"]["tomorrowland_winter"]
+    assert 90 <= len(series) <= 101  # not squeezed into one 36-day slot
+
+
 def test_history_page(seeded, client):
     response = client.get("/history")
     assert response.status_code == 200
