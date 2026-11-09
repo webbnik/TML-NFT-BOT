@@ -131,6 +131,15 @@ input {
     color: inherit;
 }
 
+/* Quick repeated taps (like + + +) count as taps, not as Safari's double-tap zoom.
+   Pinch zoom still works. */
+a,
+button,
+input,
+.stepper {
+    touch-action: manipulation;
+}
+
 :focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
@@ -760,6 +769,7 @@ body.holdings-on .holding {
     border-left: 1px solid var(--border);
     border-right: 1px solid var(--border);
     background: transparent;
+    font-size: 16px; /* smaller text makes Safari zoom in when the field is tapped */
     text-align: center;
     -moz-appearance: textfield;
     appearance: textfield;
